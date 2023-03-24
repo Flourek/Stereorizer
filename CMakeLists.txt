@@ -6,12 +6,9 @@ set( CMAKE_CXX_EXTENSIONS OFF )
 
 project( Stereorizer )
 
-
 set( LIBS_DIR ${CMAKE_CURRENT_LIST_DIR}/libs)
-set ( CMAKE_PREFIX_PATH "C:/Users/Flourek/CLionProjects/Stereorizer/libs/libtorch")
 set( IMGUI_DIR ${LIBS_DIR}/imgui )
 set( NFD_DIR ${LIBS_DIR}/nativefiledialog )
-
 
 find_package( OpenCV REQUIRED)
 find_package( OpenCV REQUIRED )
@@ -53,20 +50,26 @@ set( imgui_impl_files
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.h
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
         )
+include_directories( ${IMGUI_DIR} )
+include_directories( ${IMGUI_DIR}/backends )
+include_directories( ${IMGUI_DIR}/examples )
 
 set( nfd_files
-        ${NFD_DIR}/include/nfd.h
-        ${NFD_DIR}/common.h
-        ${NFD_DIR}/nfd_common.c
-        ${NFD_DIR}/nfd_common.h
-        ${NFD_DIR}/nfd_win.cpp
+        ${NFD_DIR}/src/include/nfd.h
+        ${NFD_DIR}/src/common.h
+        ${NFD_DIR}/src/nfd_common.c
+        ${NFD_DIR}/src/nfd_common.h
+        ${NFD_DIR}/src/nfd_win.cpp
         )
+include_directories( ${NFD_DIR}/)
+include_directories( ${NFD_DIR}/src/include)
 
 set( gl3w
         ${LIBS_DIR}/gl3w/GL/gl3w.c
         ${LIBS_DIR}/gl3w/GL/gl3w.h
         ${LIBS_DIR}/gl3w/GL/glcorearb.h
         )
+include_directories( ${LIBS_DIR}/gl3w )
 
 set( icons
         ${LIBS_DIR}/IconsFontAwesome5.h
@@ -78,45 +81,47 @@ add_executable( Stereorizer ${imgui_files} ${imgui_impl_files} ${gl3w} ${nfd_fil
 
 
 # GLFW
-include( ExternalProject )
-ExternalProject_Add(
-        glfw PREFIX ${LIBS_DIR}/glfw
-        GIT_REPOSITORY https://github.com/glfw/glfw.git
-        GIT_TAG 3.3
-        CMAKE_ARGS
-        "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-        "-DCMAKE_BUILD_TYPE=Debug"
-        "-DGLFW_BUILD_DOCS=OFF"
-        "-DGLFW_BUILD_EXAMPLES=OFF"
-        "-DGLFW_BUILD_TESTS=OFF"
-        "-DBUILD_SHARED_LIBS=OFF"
-)
-ExternalProject_Get_Property( glfw INSTALL_DIR )
-message(E: ${INSTALL_DIR})
+set( GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
+set( GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+set( GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-set( GLFW_DIR ${INSTALL_DIR} )
-set( GLFW_INCLUDE_DIR ${GLFW_DIR}/include )
-set( GLFW_LIBRARIES   ${GLFW_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX} )
-add_dependencies( Stereorizer glfw )
+add_subdirectory(${LIBS_DIR}/glfw)
+target_link_libraries( Stereorizer glfw)
+target_link_libraries( Stereorizer OpenGL::GL)
+include_directories( ${LIBS}/glfw/include)
+
+#include( ExternalProject )
+#ExternalProject_Add(
+#        glfw PREFIX ${LIBS_DIR}/glfw
+#        GIT_REPOSITORY https://github.com/glfw/glfw.git
+#        GIT_TAG 3.3
+#        CMAKE_ARGS
+#        "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
+#        "-DCMAKE_BUILD_TYPE=Debug"
+#        "-DGLFW_BUILD_DOCS=OFF"
+#        "-DGLFW_BUILD_EXAMPLES=OFF"
+#        "-DGLFW_BUILD_TESTS=OFF"
+#        "-DBUILD_SHARED_LIBS=OFF"
+#)
+#ExternalProject_Get_Property( glfw INSTALL_DIR )
+#message(E: ${INSTALL_DIR})
+#
+#set( GLFW_DIR ${INSTALL_DIR} )
+#set( GLFW_INCLUDE_DIR ${GLFW_DIR}/include )
+#set( GLFW_LIBRARIES   ${GLFW_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX} )
+#add_dependencies( Stereorizer glfw )
 
 
-if( OpenCV_FOUND AND OPENGL_FOUND )
-    include_directories( ${IMGUI_DIR} )
-    include_directories( ${IMGUI_DIR}/backends )
-    include_directories( ${IMGUI_DIR}/examples )
-    include_directories( ${LIBS_DIR}/gl3w )
-    include_directories( ${OPENGL_INCLUDE_DIR} )
-    include_directories( ${GLFW_INCLUDE_DIR} )
-    include_directories( ${NFD_DIR}/)
-    include_directories( ${NFD_DIR}/include)
-    include_directories(${PYTHON_INCLUDE_DIRS})
 
-    target_link_libraries( Stereorizer ${PYTHON_LIBRARIES})
-    target_link_libraries( Stereorizer ${GLFW_LIBRARIES} )
-    target_link_libraries( Stereorizer ${OpenCV_LIBS} )
-    target_link_libraries( Stereorizer ${OPENGL_LIBRARIES} )
+include_directories( ${OPENGL_INCLUDE_DIR} )
 
-endif()
+include_directories( ${PYTHON_INCLUDE_DIRS})
+
+target_link_libraries( Stereorizer ${PYTHON_LIBRARIES})
+target_link_libraries( Stereorizer ${GLFW_LIBRARIES} )
+target_link_libraries( Stereorizer ${OpenCV_LIBS} )
+target_link_libraries( Stereorizer ${OPENGL_LIBRARIES} )
+
 
 
 file(COPY res DESTINATION .)
