@@ -5,8 +5,6 @@ img/
 weights/
 MiDaS/
 output/
-#libs/imgui
-#libs/glfw
 
 # User-specific stuff
 .idea/**/workspace.xml
