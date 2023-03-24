@@ -5,7 +5,7 @@ img/
 weights/
 MiDaS/
 output/
-libs/imgui
+#libs/imgui
 #libs/glfw
 
 # User-specific stuff

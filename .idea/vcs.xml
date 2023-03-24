@@ -3,6 +3,5 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/MiDaS" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/libs/glfw/src/glfw" vcs="Git" />
   </component>
 </project>
