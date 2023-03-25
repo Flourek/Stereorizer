@@ -56,7 +56,6 @@ void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv:
 
                 float w = width;
                 float h = width * ( (float) result.rows / (float) result.cols);
-                std::cout << x << " " << y << std::endl;
 
                 // Normalize to [0,1]
                 ImVec2 uv0 = ImVec2( x / w , y / h);

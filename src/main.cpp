@@ -70,6 +70,7 @@ int main( int argc, char* argv[] ) {
     cv::Mat input_image = cv::imread("../img/f.jpg", cv::IMREAD_COLOR );
     cv::Mat input_depth = cv::imread( "../img/f_DEPTH.png", CV_8UC1);
 
+
     float input_aspect = (float)input_image.rows / input_image.cols;
 
     auto input_path = std::make_shared<std::string>();
@@ -119,11 +120,12 @@ int main( int argc, char* argv[] ) {
             result = updateStereo(input_image, depth, opt, mask);
 
             if (opt.mask_overlay){
-                result += maskPostProcess(mask, opt);
+                cv::Mat display_mask = maskPostProcess(mask, opt);
+                result += display_mask;
             }
 
 
-            convertMatToTexture(result, zoom_texture, GL_NEAREST);
+            convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
             convertMatToTexture(result, result_texture);
             opt.update_stereo = false;
         }

@@ -27,7 +27,7 @@ def run(input_path, model_path):
     # #         args.square, args.grayscale)
 
 
-    start(input_path, "../output", model_path)
+    start(input_path, "./output", model_path)
     print("--- %s seconds it took ---" % (time.time() - start_time))
 
     return 1

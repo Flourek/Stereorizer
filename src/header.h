@@ -13,9 +13,10 @@
 struct GuiSettings {
     bool depth_invert       = false;
     bool anaglyph_overlay   = false;
-    bool mask_overlay       = false;
+    bool mask_overlay       = true;
     bool live_refresh       = true;
-
+    bool mask_blur          = true;
+    int mask_blur_size      = 50;
 
     bool update_stereo      = false;
     bool update_input       = true;
@@ -27,15 +28,16 @@ struct GuiSettings {
     bool save_mask          = false;
     bool save_stereo        = false;
 
-    bool zoom_window_stick  = false;
-    float zoom_level        = 2.0f;
-    ImVec2 zoom_click_pos;
+    bool zoom_window_stick  = true;
+    float zoom_level        = 4.0f;
+    ImVec2 zoom_click_pos   = ImVec2(781, 252);
 
-    float deviation             = 30.0f;
+    float deviation             = 100.0f;
     std::string deviation_multiplier  = "1.0";
 
-    float mask1 = 3;
-    float mask2 = 1;
+    int mask1 = 1;
+    int mask2 = 1;
+    int mask3 = 1;
 
     std::string chuj;
 };
@@ -76,5 +78,6 @@ int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &de
 bool checkSizeMismatch(const cv::Mat& image, const cv::Mat& depth);
 
 cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt);
+
 
 #endif //STEREOREO_HEADER_H

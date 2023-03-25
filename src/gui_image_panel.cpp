@@ -13,7 +13,7 @@ using namespace ImGui;
 void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, GLuint texture, std::string &input_path,
                    float &deviation) {
     BeginGroup();
-    Text(" [Left eye]");
+    Text(" [Left eye], %f", GetIO().Framerate);
 
     BeginChild("LeftImageContainer", ImVec2(target_width, target_width), true, ImGuiWindowFlags_NoScrollbar);
         ImageCenteredWithAspect(texture, target_width, image.cols, image.rows);
@@ -31,8 +31,9 @@ void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, G
         Unindent(8.0f);
 
 
-        opt.update_stereo |= SliderFloat("MESK", &opt.mask1, 1.0f, 100.0f);
-        opt.update_stereo |= SliderFloat("MESKe", &opt.mask2, 1.0f, 100.0f);
+        opt.update_stereo |= SliderInt("Mask", &opt.mask_blur_size, 1.0f, 255.0f);
+        opt.update_stereo |= Checkbox("MaskOpacity", &opt.mask_blur);
+        if(opt.mask3 % 2 == 0) opt.mask3++;
 
 
     }

@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "header.h"
 #include "GLFW/glfw3.h"
+#include "Chrono"
 
 cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness, float highlights, GuiSettings& flags){
 
@@ -54,24 +55,73 @@ cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::
     return result;
 }
 
+
+
 cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt) {
-    cv::Mat blurred, new_mask = mask.clone();
+    cv::Mat blurred, res = mask.clone();
+
+    if(res.channels() == 3)
+        cvtColor(res, res, cv::COLOR_BGR2GRAY);
+
+//    std::cout << res.channels() << " " << CV_8UC1 << std::endl;
 
     // Invert
-    bitwise_not(new_mask, new_mask);
+    bitwise_not(res, res);
 
-    // Remove noise
-    int size = (int)opt.mask1;
+    // Kernel sizes
+    int morph = 2;
+    int erode = 2;
+    int blur  = 11;
 
-    cv::Mat kernel = cv::Mat::ones(size, size, CV_8UC1);
-    cv::morphologyEx(new_mask, new_mask, cv::MORPH_CLOSE, kernel);
-    cv::erode(new_mask, new_mask, kernel);
+    cv::Mat kernelEx = cv::Mat::ones(morph, morph, CV_8UC1);
+    cv::Mat kernel_erode = cv::Mat::ones(erode, erode, CV_8UC1);
+
+    // Remove noise, patch holes, smooth edges
+    cv::morphologyEx(res, res, cv::MORPH_CLOSE, kernelEx);
+    cv::erode(res, res, kernel_erode);
+    cv::blur(res, res, cv::Size(blur, blur) );
+    cv::threshold(res, res, 127,255, cv::THRESH_BINARY);
+    cv::erode(res, res, erode);
+
+    if(opt.mask_blur){
+
+        // Get the right edge of each island
+        cv::Mat edge(res.rows, res.cols, CV_8UC1);
+        typedef uchar Pixel;
 
 
-    cv::blur(new_mask, blurred, cv::Size(opt.mask2, opt.mask2 ) );
-    new_mask += blurred;
+        float opacity_step = (float) 255 / opt.mask_blur_size;
 
-    return new_mask;
+        // this is litteraly 10 times faster than normal nested for loops
+        edge.forEach<Pixel> (
+            [&res, &edge, &opacity_step, opt] (Pixel &pixel, const int * position) -> void {
+
+                if(position[1] == 0 || position[1] == res.cols) return;
+
+                Pixel previous = res.at<Pixel>(position[0], position[1] - 1);
+                Pixel current  = res.at<Pixel>(position[0], position[1]);
+                if( previous == 255 && current == 0){
+
+                    for (int i = 0; i < opt.mask_blur_size; ++i) {
+                        if ( position[1] + i > res.cols ) return;
+                        edge.at<Pixel>(position[0], position[1] + i) = cv::saturate_cast<uchar>(255 - i * opacity_step * 4);
+                    }
+                }
+            }
+        );
+
+
+
+
+        res += edge;
+    }
+
+
+
+    if(res.channels() == 1)
+        cvtColor(res, res, cv::COLOR_GRAY2BGR);
+
+    return res;
 }
 
 
@@ -147,14 +197,14 @@ GuiSettings* flags_global;
 bool openFileDialog(std::string& input_path, std::string& filename, const std::string& default_path){
     nfdchar_t *outPath;
     auto def_path = const_cast<nfdchar_t *>(default_path.c_str());
-    nfdresult_t result = NFD_OpenDialog(&outPath, def_path, true);
-
-    if ( result == NFD_OKAY ) {
-        input_path = outPath;
-        filename = input_path.substr(input_path.find_last_of('\\') + 1);
-        free(outPath);
-        return true;
-    }
+//    nfdresult_t result = NFD_OpenDialog(&outPath, def_path, true);
+//
+//    if ( result == NFD_OKAY ) {
+//        input_path = outPath;
+//        filename = input_path.substr(input_path.find_last_of('\\') + 1);
+//        free(outPath);
+//        return true;
+//    }
 
     return false;
 }
