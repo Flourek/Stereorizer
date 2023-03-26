@@ -35,6 +35,8 @@ struct GuiSettings {
     float deviation             = 100.0f;
     std::string deviation_multiplier  = "1.0";
 
+    bool midas_first_execution = true;
+
     int mask1 = 1;
     int mask2 = 1;
     int mask3 = 1;
@@ -73,11 +75,11 @@ void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, G
 void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv::Mat &result, const cv::Mat &mask,
                     const cv::Mat &image, float width, std::string &output_path);
 
-int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image);
+int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt);
 
 bool checkSizeMismatch(const cv::Mat& image, const cv::Mat& depth);
 
 cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt);
 
-
+void importModules();
 #endif //STEREOREO_HEADER_H

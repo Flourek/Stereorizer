@@ -3,8 +3,24 @@
 #include <fstream>
 #include "opencv2/opencv.hpp"
 #include "iostream"
+#include "header.h"
 
-int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image) {
+void importModules() {
+
+    FILE* fp;
+    const char* file = "import_modules.py";
+    fp = fopen(file, "r");
+    PyRun_SimpleFile(fp, file);
+    fclose(fp);
+
+}
+
+int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt) {
+
+    if(opt.midas_first_execution){
+        importModules();
+        opt.midas_first_execution = false;
+    }
 
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);

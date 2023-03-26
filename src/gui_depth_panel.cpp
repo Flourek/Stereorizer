@@ -29,7 +29,7 @@ void GuiDepthPanel(GuiSettings &flags, GLuint depth_texture, float width, float 
         Indent( 8.0f );
         SeparatorText("MiDaS");
         if( Button("Generate", ImVec2(150, 20)) ){
-            generateDepthMap(input_path, model_path, input_depth);
+            generateDepthMap(input_path, model_path, input_depth, flags);
             flags.update_depth |= true;
         }
         NewLine();

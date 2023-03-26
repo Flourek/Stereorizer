@@ -14,6 +14,8 @@
       <option name="ignoredIdentifiers">
         <list>
           <option value="cv2.*" />
+          <option value="src.inference_depth.*" />
+          <option value="utils" />
         </list>
       </option>
     </inspection_tool>
