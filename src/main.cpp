@@ -100,7 +100,7 @@ int main( int argc, char* argv[] ) {
         int vw, vh;
         glfwGetFramebufferSize(window, &vw, &vh);
 
-        opt.update_stereo |= ImGui::IsKeyPressed(ImGuiKey_Space);
+        opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
         if (opt.update_input){
             changeInputImage(input_image, *input_path, depth, opt);
@@ -119,18 +119,22 @@ int main( int argc, char* argv[] ) {
             opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
         }
 
-        if (opt.update_stereo && !opt.size_mismatch){
-            result = updateStereo(input_image, depth, opt, mask);
 
-            if (opt.mask_overlay){
-                cv::Mat display_mask = maskPostProcess(mask, opt);
-                result += display_mask;
+        if (!opt.size_mismatch){
+
+            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
+                result = updateStereo(input_image, depth, opt, mask);
+                opt.force_update = false;
+
+                if (opt.mask_overlay){
+                    cv::Mat display_mask = maskPostProcess(mask, opt);
+                    result += display_mask;
+                }
+
+                convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
+                convertMatToTexture(result, result_texture);
+                opt.update_stereo = false;
             }
-
-
-            convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
-            convertMatToTexture(result, result_texture);
-            opt.update_stereo = false;
         }
 
 

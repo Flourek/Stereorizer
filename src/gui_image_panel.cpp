@@ -76,7 +76,7 @@ void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, G
         SameLine();
         opt.update_stereo |= InputText("##Multipliere", &opt.deviation_multiplier, ImGuiInputTextFlags_CharsDecimal);
         NewLine();
-        opt.update_stereo |= Button("Stereoify");
+        opt.force_update |= Button("Stereoify");
 
         Unindent(8.0f);
     }

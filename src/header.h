@@ -22,6 +22,7 @@ struct GuiSettings {
     bool update_stereo      = false;
     bool update_input       = true;
     bool update_depth       = false;
+    bool force_update       = false;
     bool size_mismatch      = false;
 
     bool save_sbs           = true;
@@ -29,9 +30,9 @@ struct GuiSettings {
     bool save_mask          = false;
     bool save_stereo        = false;
 
-    bool zoom_window_stick  = true;
+    bool zoom_window_stick  = false;
     float zoom_level        = 4.0f;
-    ImVec2 zoom_click_pos   = ImVec2(781, 252);
+    ImVec2 zoom_click_pos;
 
     float deviation             = 100.0f;
     std::string deviation_multiplier  = "1.0";

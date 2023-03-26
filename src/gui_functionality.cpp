@@ -183,7 +183,11 @@ void changeInputImage(cv::Mat& input_image, const std::string& input_path, const
     else
         std::cout << "imag empty: " << input_path << std::endl;
 
-//    flags.size_mismatch = checkSizeMismatch(input_image, depth);
+    // Resize the input for performance reasons (1000x1000 image = 1)
+    int scale = sqrt( new_image.total() / 1000000 );
+    std::cout << scale << std::endl;
+    flags.viewport_scale = scale;
+
 }
 
 
