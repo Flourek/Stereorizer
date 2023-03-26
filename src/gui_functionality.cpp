@@ -34,7 +34,12 @@ cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness
 }
 
 cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::Mat &mask) {
-    cv::Mat result;
+
+    cv::Mat result, input_resized, depth_resized;
+
+    cv::Size new_size( input.cols / opt.viewport_scale, input.rows / opt.viewport_scale);
+    cv::resize(input, input_resized, new_size);
+    cv::resize(depth, depth_resized, new_size);
 
     // Normalize for every image size and multiply by the ui setting
     float multiplier = 1.0f;
@@ -43,14 +48,14 @@ cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::
     } catch (std::exception& e) {}
 
     float deviation = opt.deviation;
-    deviation *= ((float) input.cols / 1000);
+    deviation *= ((float) input_resized.cols / 1000);
     deviation *= multiplier;
 
-    result = shift_pixels(input, depth, 3, mask, deviation);
-    result = inpaint(input, result, deviation);
+    result = shift_pixels(input_resized, depth_resized, 3, mask, deviation);
+    result = inpaint(input_resized, result, deviation);
 
     if (opt.anaglyph_overlay)
-        result = anaglyphize(input, result);
+        result = anaglyphize(input_resized, result);
 
     return result;
 }

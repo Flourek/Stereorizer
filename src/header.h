@@ -13,10 +13,11 @@
 struct GuiSettings {
     bool depth_invert       = false;
     bool anaglyph_overlay   = false;
-    bool mask_overlay       = true;
+    bool mask_overlay       = false;
     bool live_refresh       = true;
-    bool mask_blur          = true;
+    bool mask_blur          = false;
     int mask_blur_size      = 50;
+    double viewport_scale      = 2;
 
     bool update_stereo      = false;
     bool update_input       = true;

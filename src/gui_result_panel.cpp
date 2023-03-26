@@ -93,6 +93,20 @@ void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv:
         opt.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
         opt.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
         ImGui::Checkbox("Live Refresh", &opt.live_refresh);
+
+        NewLine();
+        Text("Viewport scale:");
+
+        std::string format = opt.viewport_scale == 1 ? "1" : "1/%.0f";
+
+        if ( InputDouble("##e", &opt.viewport_scale, 1.0f, 1.0f, format.c_str()) ){
+            if ( opt.viewport_scale <= 0 )
+                opt.viewport_scale = 1;
+            opt.update_stereo |= true;
+        }
+
+
+
         Unindent( 8.0f );
     }
     EndChild();

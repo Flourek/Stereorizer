@@ -15,6 +15,8 @@ Mat shift_pixels(const cv::Mat &left_img, Mat depth, const float Distance, cv::M
     if (left_img.size != depth.size)
         return left_img;
 
+    std::cout << height << " " << width << std::endl;
+
     Mat right_img(height, width, CV_8UC3);
     left_img.convertTo(mask, CV_8UC3);
 
