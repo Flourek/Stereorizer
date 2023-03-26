@@ -4,18 +4,20 @@ import numpy as np
 import torch
 import cv2
 
-# sys.path.append("..")
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+sys.path.insert(0, parent_dir + "/MiDaS")
 
-from MiDaS import utils
-from MiDaS.midas.dpt_depth import DPTDepthModel
-from MiDaS.midas.transforms import Resize, NormalizeImage, PrepareForNet
+
+import utils
+from midas.dpt_depth import DPTDepthModel
+from midas.model_loader import load_model
+from midas.transforms import Resize, NormalizeImage, PrepareForNet
+import glob
 
 from torchvision.transforms import Compose
 
 
 def run(input_path, model_path):
-    print("eagle" + input_path + model_path)
-
     import time
     start_time = time.time()
 
@@ -34,8 +36,6 @@ def run(input_path, model_path):
 
 
 first_execution = True
-
-
 def process(device, model, model_type, image, input_size, target_size, optimize, use_camera):
     """
     Run the inference and interpolate.
@@ -56,7 +56,9 @@ def process(device, model, model_type, image, input_size, target_size, optimize,
     global first_execution
 
     if "openvino" in model_type:
-
+        if first_execution or not use_camera:
+            print(f"    Input resized to {input_size[0]}x{input_size[1]} before entering the encoder")
+            first_execution = False
 
         sample = [np.reshape(image, (1, 3, *input_size))]
         prediction = model(sample)[model.output(0)][0]
@@ -94,8 +96,8 @@ def process(device, model, model_type, image, input_size, target_size, optimize,
     return prediction
 
 
-def start(input_path, output_path, model_path, model_type="dpt_beit_large_512", optimize=False, side=True, height=None,
-          square=False, grayscale=True):
+def start(input_path, output_path, model_path, model_type="dpt_beit_large_512", optimize=False, side=False, height=None,
+        square=False, grayscale=False):
     """Run MonoDepthNN to compute depth maps.
 
     Args:
@@ -114,35 +116,21 @@ def start(input_path, output_path, model_path, model_type="dpt_beit_large_512", 
     # select device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Device: %s" % device)
-    
-    model = DPTDepthModel(
-            path=model_path,
-            backbone="beitl16_512",
-            non_negative=True,
-        )
-    net_w, net_h = 512, 512
-    resize_mode = "minimal"
-    normalization = NormalizeImage(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-    
-    transform = Compose(
-        [
-            Resize(
-                net_w,
-                net_h,
-                resize_target=None,
-                keep_aspect_ratio=True,
-                ensure_multiple_of=32,
-                resize_method=resize_mode,
-                image_interpolation_method=cv2.INTER_CUBIC,
-            ),
-            normalization,
-            PrepareForNet(),
-        ]
-    )
 
+    model, transform, net_w, net_h = load_model(device, model_path, model_type, optimize, height, square)
 
-    os.makedirs(output_path, exist_ok=True)
+    # get input
+    if input_path is not None:
+        image_names = [input_path]
+        num_images = 1
+    else:
+        print("No input path specified. Grabbing images from camera.")
 
+    # create output folder
+    if output_path is not None:
+        os.makedirs(output_path, exist_ok=True)
+
+    print("Start processing")
     print("  Processing {} ".format(input_path))
 
     # input
@@ -152,16 +140,15 @@ def start(input_path, output_path, model_path, model_type="dpt_beit_large_512", 
     # compute
     with torch.no_grad():
         prediction = process(device, model, model_type, image, (net_w, net_h), original_image_rgb.shape[1::-1],
-                             optimize, False)
+                                optimize, False)
 
+    # output
     filename = os.path.join(
         output_path, os.path.splitext(os.path.basename(input_path))[0] + '-' + model_type
     )
-
     print(filename)
     utils.write_depth(filename, prediction, grayscale, bits=2)
-
-    print("Finished")
+        
 
 
 # Program entry point from CPP
@@ -172,5 +159,8 @@ ca_one = str(sys.argv[0])
 ca_two = str(sys.argv[1])
 print("My command line args are " + ca_one + " and " + ca_two)
 
+
+# ca_one = "C:/Users/Flourek/CLionProjects/Stereorizer/img/hg.jpg"
+# ca_two = "C:/Users/Flourek/CLionProjects/Stereorizer/weights/dpt_beit_large_512.pt"
 
 run(ca_one, ca_two)
