@@ -101,6 +101,8 @@ int main( int argc, char* argv[] ) {
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
     cv::Mat image, depth, result, mask;
     cv::Mat depth_float;
+    result = input_image.clone();
+    Stereo stereo = Stereo(input_image, depth, result, opt.deviation);
 
 
     result = input_image.clone();
@@ -128,6 +130,9 @@ int main( int argc, char* argv[] ) {
             opt.update_depth = true;
             opt.update_stereo = opt.live_refresh;
             opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
+
+            stereo.left = input_image;
+
         }
 
         if (opt.update_depth){
@@ -148,7 +153,7 @@ int main( int argc, char* argv[] ) {
                 depth_float = depth_float / 255.0;
             result = input_image.clone();
             convertMatToTexture(result, result_texture, GL_LINEAR, 2);
-
+            stereo.depth = depth_float;
 
         }
 
@@ -157,11 +162,11 @@ int main( int argc, char* argv[] ) {
             ZoneScopedN("Stereo");
 
             if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
-                updateStereo(input_image, depth_float, mask, opt, result);
+                result = updateStereo(stereo, opt);
                 opt.force_update = false;
 
                 if (opt.mask_overlay){
-                    cv::Mat display_mask = maskPostProcess(mask, opt);
+                    cv::Mat display_mask = maskPostProcess(stereo.mask, opt);
                     result += display_mask;
                 }
 

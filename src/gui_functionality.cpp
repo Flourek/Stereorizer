@@ -35,9 +35,10 @@ cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness
     return depth;
 }
 
-cv::Mat updateStereo(const cv::Mat &input, cv::Mat &depth, cv::Mat &mask, GuiSettings &opt, cv::Mat &result) {
+cv::Mat updateStereo(Stereo &stereo, GuiSettings &opt) {
     ZoneScoped;
-//    cv::Mat result, input_resized, depth_resized;
+
+    cv::Mat result, input_resized, depth_resized;
 //    result = input.clone();
 //
 //    cv::Size new_size( input.cols / opt.viewport_scale, input.rows / opt.viewport_scale);
@@ -51,21 +52,22 @@ cv::Mat updateStereo(const cv::Mat &input, cv::Mat &depth, cv::Mat &mask, GuiSet
     } catch (std::exception& e) {}
 
     float deviation = opt.deviation;
-    deviation *= ((float) input.cols / 1000);
+    deviation *= ((float) stereo.left.cols / 1000);
     deviation *= multiplier;
+    stereo.deviation = deviation;
+
 
     if(!opt.inpainting_glitch)
-        result = 0;
+        stereo.right = 0;
 
-    Stereo chuj(input, depth, result, deviation);
-    Stereo::ShiftPixels::run(chuj);
+    result = Stereo::ShiftPixels::run(stereo);
 
     if(!opt.inpainting_glitch)
-        Stereo::Inpaint::run(chuj);
+        result = Stereo::Inpaint::run(stereo);
 
 
-//    if (opt.anaglyph_overlay)
-//        result = anaglyphize(input_resized, result);
+    if (opt.anaglyph_overlay)
+        result = anaglyphize(stereo.left, result);
 
     return result;
 }

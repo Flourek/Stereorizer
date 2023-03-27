@@ -56,6 +56,7 @@ public:
     cv::Mat depth;
     cv::Mat mask;
 
+    Stereo();
     Stereo(const cv::Mat &left, const cv::Mat &depth, cv::Mat &right, float deviation);
 
     struct ShiftPixels {
@@ -63,7 +64,7 @@ public:
 
         explicit ShiftPixels(Stereo& stereo) : stereo(stereo) {}
 
-        static void run(Stereo &stereo);
+        static cv::Mat run(Stereo &stereo);
         void operator () (float &pixel, const int * position) const;
     };
 
@@ -71,7 +72,7 @@ public:
         Stereo& stereo;
         explicit Inpaint(Stereo& stereo) : stereo(stereo) {}
 
-        static void run(Stereo &stereo);
+        static cv::Mat run(Stereo &stereo);
         void operator () (uchar &pixel, const int * position) const;
     };
 
@@ -92,7 +93,7 @@ void changeInputImage(cv::Mat& input_image, const std::string& input_path, const
 
 cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness, float highlights, GuiSettings& flags);
 
-cv::Mat updateStereo(const cv::Mat &input, cv::Mat &depth, cv::Mat &mask, GuiSettings &opt, cv::Mat &result);
+cv::Mat updateStereo(Stereo &stereo, GuiSettings &opt);
 
 void ImageCenteredWithAspect(GLuint texture, int target_width, int width, int height);
 

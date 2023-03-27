@@ -10,6 +10,8 @@ using namespace std;
 using namespace cv;
 
 
+//Stereo::Stereo() {}
+
 Stereo::Stereo(const cv::Mat &left, const cv::Mat &depth, cv::Mat &right, float deviation) {
     this->left = left.clone();
     this->right = right;
@@ -20,9 +22,11 @@ Stereo::Stereo(const cv::Mat &left, const cv::Mat &depth, cv::Mat &right, float 
 
 
 
-void Stereo::ShiftPixels::run(Stereo &stereo) {
+cv::Mat Stereo::ShiftPixels::run(Stereo &stereo) {
     Stereo::ShiftPixels sp(stereo);
+    stereo.mask =0;
     stereo.depth.forEach<float>( sp );
+    return stereo.right;
 }
 
 
@@ -42,7 +46,7 @@ void Stereo::ShiftPixels::operator () (float &pixel, const int * position) const
 }
 
 
-void Stereo::Inpaint::run(Stereo &stereo) {
+cv::Mat Stereo::Inpaint::run(Stereo &stereo) {
     Stereo::Inpaint functor(stereo);
     cv::Mat add;
     cvtColor(stereo.mask, add, cv::COLOR_GRAY2BGR);
@@ -50,6 +54,7 @@ void Stereo::Inpaint::run(Stereo &stereo) {
 
 //    stereo.right += add;
     stereo.mask.forEach<uchar>( functor );
+    return stereo.right;
 //    stereo.right = inpaint(stereo.left, stereo.right, stereo.deviation, add);
 }
 
