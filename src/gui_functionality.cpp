@@ -9,6 +9,8 @@
 #include "header.h"
 #include "GLFW/glfw3.h"
 #include "Chrono"
+#include "Tracy.hpp"
+
 
 cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness, float highlights, GuiSettings& flags){
 
@@ -33,13 +35,14 @@ cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness
     return depth;
 }
 
-cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::Mat &mask) {
-
-    cv::Mat result, input_resized, depth_resized;
-
-    cv::Size new_size( input.cols / opt.viewport_scale, input.rows / opt.viewport_scale);
-    cv::resize(input, input_resized, new_size);
-    cv::resize(depth, depth_resized, new_size);
+cv::Mat updateStereo(const cv::Mat &input, cv::Mat &depth, cv::Mat &mask, GuiSettings &opt, cv::Mat &result) {
+    ZoneScoped;
+//    cv::Mat result, input_resized, depth_resized;
+//    result = input.clone();
+//
+//    cv::Size new_size( input.cols / opt.viewport_scale, input.rows / opt.viewport_scale);
+//    cv::resize(input, input_resized, new_size);
+//    cv::resize(depth, depth_resized, new_size);
 
     // Normalize for every image size and multiply by the ui setting
     float multiplier = 1.0f;
@@ -48,14 +51,21 @@ cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::
     } catch (std::exception& e) {}
 
     float deviation = opt.deviation;
-    deviation *= ((float) input_resized.cols / 1000);
+    deviation *= ((float) input.cols / 1000);
     deviation *= multiplier;
 
-    result = shift_pixels(input_resized, depth_resized, 3, mask, deviation);
-    result = inpaint(input_resized, result, deviation);
+    if(!opt.inpainting_glitch)
+        result = 0;
 
-    if (opt.anaglyph_overlay)
-        result = anaglyphize(input_resized, result);
+    Stereo chuj(input, depth, result, deviation);
+    Stereo::ShiftPixels::run(chuj);
+
+    if(!opt.inpainting_glitch)
+        Stereo::Inpaint::run(chuj);
+
+
+//    if (opt.anaglyph_overlay)
+//        result = anaglyphize(input_resized, result);
 
     return result;
 }
@@ -154,7 +164,7 @@ void ImageCenteredWithAspect(GLuint texture, int target_width, int width, int he
 
 void convertMatToTexture(cv::Mat img, GLuint &texture, GLint gl_filter, float scale) {
 
-    cv::cvtColor(img, img, cv::COLOR_BGR2RGBA);
+    cv::cvtColor(img, img, cv::COLOR_BGR2BGRA);
 
     cv::Mat resized_img;
     cv::resize(img, resized_img, cv::Size(img.cols / scale, img.rows / scale));
@@ -167,7 +177,7 @@ void convertMatToTexture(cv::Mat img, GLuint &texture, GLint gl_filter, float sc
     glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 
     GLint internal_format = GL_RGBA;
-    GLenum format = GL_RGBA;
+    GLenum format = GL_BGRA;
 
     glTexImage2D( GL_TEXTURE_2D, 0, internal_format, resized_img.cols, resized_img.rows, 0, format, GL_UNSIGNED_BYTE, resized_img.data );
 

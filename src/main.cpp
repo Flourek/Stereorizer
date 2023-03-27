@@ -10,14 +10,29 @@
 #include "../libs/IconsFontAwesome5.h"
 #include <Python.h>
 
-
+#include "Tracy.hpp"
+#define TRACY_ENABLE
 
 // vw, vh = viewport width, height
 #define SmallImageSize 0.24*vw
 #define ResultImageSize 0.4*vw
 
+void chuj(const cv::Mat& img, GLuint& texture, int scale){
+    ZoneScoped;
+
+    cv::Mat e;
+    cv::resize(img, e, cv::Size(img.cols / scale, img.rows / scale));
+
+    cv::cvtColor(e, e, cv::COLOR_BGR2BGRA);
+
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, e.cols, e.rows, GL_BGRA,
+                    GL_UNSIGNED_BYTE, e.data);
+}
+
 
 int main( int argc, char* argv[] ) {
+    ZoneScoped;
 
     if( !glfwInit() ){
         return -1;
@@ -85,12 +100,15 @@ int main( int argc, char* argv[] ) {
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
     cv::Mat image, depth, result, mask;
+    cv::Mat depth_float;
+
 
     result = input_image.clone();
     depth = input_depth.clone();
-
+    convertMatToTexture(result, result_texture, GL_LINEAR, 1);
 
     while(!glfwWindowShouldClose(window)){
+
         glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
@@ -105,6 +123,7 @@ int main( int argc, char* argv[] ) {
         if (opt.update_input){
             changeInputImage(input_image, *input_path, depth, opt);
             convertMatToTexture(input_image, image_texture);
+
             opt.update_input = false;
             opt.update_depth = true;
             opt.update_stereo = opt.live_refresh;
@@ -117,13 +136,28 @@ int main( int argc, char* argv[] ) {
             opt.update_depth= false;
             opt.update_stereo = opt.live_refresh;
             opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
+
+            depth.convertTo(depth_float, CV_32FC1);
+
+            double depth_min, depth_max;
+            minMaxLoc(depth_float, &depth_min, &depth_max);
+
+            if (depth_min != depth_max)
+                depth_float = (depth_float - depth_min) / (depth_max - depth_min);
+            else
+                depth_float = depth_float / 255.0;
+            result = input_image.clone();
+            convertMatToTexture(result, result_texture, GL_LINEAR, 2);
+
+
         }
 
 
         if (!opt.size_mismatch){
+            ZoneScopedN("Stereo");
 
             if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
-                result = updateStereo(input_image, depth, opt, mask);
+                updateStereo(input_image, depth_float, mask, opt, result);
                 opt.force_update = false;
 
                 if (opt.mask_overlay){
@@ -131,8 +165,8 @@ int main( int argc, char* argv[] ) {
                     result += display_mask;
                 }
 
-                convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
-                convertMatToTexture(result, result_texture);
+//                convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
+                chuj(result, result_texture, 2);
                 opt.update_stereo = false;
             }
         }
@@ -141,6 +175,8 @@ int main( int argc, char* argv[] ) {
 
         using namespace ImGui; {
             static int counter = 0;
+            ZoneScopedN("ImGUI");
+
 
             SetNextWindowPos( ImVec2(0,0) );
             SetNextWindowSize( ImVec2(vw, vh) );
@@ -162,6 +198,8 @@ int main( int argc, char* argv[] ) {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
         glfwSwapBuffers( window );
+
+        FrameMark;
     }
 
     Py_Finalize();

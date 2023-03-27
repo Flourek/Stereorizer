@@ -5,6 +5,7 @@ img/
 weights/
 MiDaS/
 output/
+tracy/
 
 # User-specific stuff
 .idea/**/workspace.xml

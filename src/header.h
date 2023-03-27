@@ -30,6 +30,8 @@ struct GuiSettings {
     bool save_mask          = false;
     bool save_stereo        = false;
 
+    bool inpainting_glitch  = false;
+
     bool zoom_window_stick  = false;
     float zoom_level        = 4.0f;
     ImVec2 zoom_click_pos;
@@ -39,17 +41,46 @@ struct GuiSettings {
 
     bool midas_first_execution = true;
 
-    int mask1 = 1;
-    int mask2 = 1;
-    int mask3 = 1;
+    int x = 1;
+    int y = 1;
+    int z = 1;
 
     std::string chuj;
 };
 
+class Stereo {
+public:
+    float deviation = 3;
+    cv::Mat left;
+    cv::Mat right;
+    cv::Mat depth;
+    cv::Mat mask;
 
-cv::Mat inpaint(const cv::Mat& left_img, cv::Mat right_img, float deviation);
+    Stereo(const cv::Mat &left, const cv::Mat &depth, cv::Mat &right, float deviation);
 
-cv::Mat shift_pixels(const cv::Mat &left_img, cv::Mat depth, const float distance, cv::Mat &mask, float deviation);
+    struct ShiftPixels {
+        Stereo& stereo;
+
+        explicit ShiftPixels(Stereo& stereo) : stereo(stereo) {}
+
+        static void run(Stereo &stereo);
+        void operator () (float &pixel, const int * position) const;
+    };
+
+    struct Inpaint {
+        Stereo& stereo;
+        explicit Inpaint(Stereo& stereo) : stereo(stereo) {}
+
+        static void run(Stereo &stereo);
+        void operator () (uchar &pixel, const int * position) const;
+    };
+
+};
+
+
+cv::Mat inpaint(const cv::Mat& left_img,cv:: Mat right_img, float deviation, cv::Mat &mask);
+
+void shift_pixels(const cv::Mat &left_img, cv::Mat &depth, cv::Mat &result, cv::Mat &mask, float deviation);
 
 cv::Mat anaglyphize(cv::Mat left_img, cv::Mat right_img);
 
@@ -61,7 +92,7 @@ void changeInputImage(cv::Mat& input_image, const std::string& input_path, const
 
 cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness, float highlights, GuiSettings& flags);
 
-cv::Mat updateStereo(const cv::Mat &input, cv::Mat depth, GuiSettings &opt, cv::Mat &mask);
+cv::Mat updateStereo(const cv::Mat &input, cv::Mat &depth, cv::Mat &mask, GuiSettings &opt, cv::Mat &result);
 
 void ImageCenteredWithAspect(GLuint texture, int target_width, int width, int height);
 

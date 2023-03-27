@@ -4,6 +4,8 @@ set( CMAKE_CXX_STANDARD 17 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
 set( CMAKE_CXX_EXTENSIONS OFF )
 
+
+
 project( Stereorizer )
 
 set( LIBS_DIR ${CMAKE_CURRENT_LIST_DIR}/libs)
@@ -14,6 +16,7 @@ find_package( OpenCV REQUIRED)
 find_package( OpenCV REQUIRED )
 find_package( OpenGL REQUIRED )
 find_package( PythonLibs REQUIRED)
+
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
@@ -76,9 +79,13 @@ set( icons
         ${LIBS_DIR}/pyhelper.h
         )
 
-
 add_executable( Stereorizer ${imgui_files} ${imgui_impl_files} ${gl3w} ${nfd_files} ${icons} ${project_files} )
 
+target_compile_definitions(Stereorizer PUBLIC TRACY_ENABLE=1 )
+add_subdirectory(tracy)
+include_directories(tracy/public/tracy)
+add_library(tracy STATIC tracy/public/TracyClient.cpp)
+target_link_libraries (Stereorizer Tracy::TracyClient )
 
 # GLFW
 set( GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)

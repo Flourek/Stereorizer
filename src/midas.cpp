@@ -17,10 +17,7 @@ void importModules() {
 
 int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt) {
 
-    if(opt.midas_first_execution){
-        importModules();
-        opt.midas_first_execution = false;
-    }
+
 
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);
@@ -30,6 +27,11 @@ int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &de
     // Skip generating if file already exists
     std::ifstream infile(result_path);
     if ( !infile.good() ){
+
+        if(opt.midas_first_execution){
+            importModules();
+            opt.midas_first_execution = false;
+        }
 
         int argc = 2;
         wchar_t** wargv = new wchar_t*[argc];
