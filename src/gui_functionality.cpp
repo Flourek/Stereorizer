@@ -10,6 +10,8 @@
 #include "GLFW/glfw3.h"
 #include "Chrono"
 #include "Tracy.hpp"
+#include "../libs/IconsFontAwesome5.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 
 cv::Mat adjustDepth(const cv::Mat& input_depth, float contrast, float brightness, float highlights, GuiSettings& flags){
@@ -163,6 +165,49 @@ void ImageCenteredWithAspect(GLuint texture, int target_width, int width, int he
     ImGui::EndChild();
 
 }
+
+void TextCentered(const std::string& text) {
+    auto windowWidth = ImGui::GetWindowSize().x;
+    auto textWidth   = ImGui::CalcTextSize(text.c_str()).x;
+
+    ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+    ImGui::Text("%s", text.c_str());
+}
+
+void GuiFileDialog(const std::string& text, std::string& path){
+    float text_width = ImGui::CalcTextSize(text.c_str()).x;
+    ImGui::SetCursorPosX(-text_width);
+    RightAlignNextItem();
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", text.c_str());
+    ImGui::SameLine();
+    ImGui::InputText("##output_path", &path, ImGuiInputTextFlags_ReadOnly);
+    ImGui::SameLine();
+    ImGui::Button(ICON_FA_FOLDER_OPEN);
+}
+
+bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v_max){
+    float text_child_width = ImGui::GetWindowSize().x / 5;
+    float text_width = ImGui::CalcTextSize(label.c_str()).x;
+    float height = ImGui::GetFrameHeight();
+
+    ImGui::BeginChild(label.c_str(), ImVec2(text_child_width, height));
+        ImGui::SameLine(text_child_width - text_width);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("%s", label.c_str());
+    ImGui::EndChild();
+    ImGui::SameLine();
+    return  ImGui::SliderFloat("##Masky", x, v_min, v_max);
+}
+
+
+void RightAlignNextItem(){
+    float width = ImGui::GetWindowSize().x / 5;
+    ImGui::NewLine();
+    ImGui::SameLine(0, width + 8);
+}
+
+
 
 void convertMatToTexture(cv::Mat img, GLuint &texture, GLint gl_filter, float scale) {
 

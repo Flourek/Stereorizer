@@ -17,8 +17,6 @@ void importModules() {
 
 int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt) {
 
-
-
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);
     result_path = result_path.substr(0, result_path.find_last_of("."));
@@ -59,7 +57,7 @@ int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &de
         wargv = nullptr;
     }
 
-    depth_image = cv::imread(result_path, CV_8UC1);
+    depth_image = cv::imread(result_path);
 
     return 1;
 

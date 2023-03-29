@@ -44,7 +44,8 @@ int main( int argc, char* argv[] ) {
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     float resolution_scale = mode->width / 1920;
 
-    GLFWwindow* window = glfwCreateWindow( 1280 * resolution_scale, 720 * resolution_scale, "Stereorizer", nullptr, nullptr );
+    glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    GLFWwindow* window = glfwCreateWindow( 1920 * resolution_scale, 1080 * resolution_scale, "Stereorizer", nullptr, nullptr );
     glfwMakeContextCurrent( window );
     glfwSwapInterval( 1 );
     gl3wInit();
@@ -61,6 +62,13 @@ int main( int argc, char* argv[] ) {
 
     ImGuiIO& io = ImGui::GetIO();
     ImGuiStyle& style = ImGui::GetStyle();
+    style.FrameRounding = 3.0f;
+    style.Colors[ImGuiCol_Button] = ImColor(135, 41, 80);
+    style.Colors[ImGuiCol_ChildBg] = ImColor(28, 28, 28);
+    style.Colors[ImGuiCol_Header] = ImColor(41, 41, 41);
+    style.Colors[ImGuiCol_FrameBg] = ImColor(71, 71, 71);
+    style.Colors[ImGuiCol_SliderGrab] = ImColor(153, 52, 94);
+
 
     // ImGui Style Settings
     io.Fonts->AddFontDefault();
@@ -74,7 +82,6 @@ int main( int argc, char* argv[] ) {
     icons_config.GlyphMinAdvanceX = iconFontSize;
     io.Fonts->AddFontFromFileTTF( "./res/fa-solid-900.ttf", iconFontSize, &icons_config, icons_ranges );
 
-    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.1, 0.1, 0.1, 1);
     ImGui::GetIO().FontGlobalScale  = 1.0 * resolution_scale;
 
 
@@ -86,7 +93,7 @@ int main( int argc, char* argv[] ) {
 
 
     cv::Mat input_image = cv::imread("../img/f.jpg", cv::IMREAD_COLOR );
-    cv::Mat input_depth = cv::imread( "../img/f_DEPTH.png", CV_8UC1);
+    cv::Mat input_depth = cv::imread( "../img/f_DEPTH.png", cv::IMREAD_COLOR );
 
 
     float input_aspect = (float)input_image.rows / input_image.cols;
@@ -95,7 +102,7 @@ int main( int argc, char* argv[] ) {
     dragDropInputFile(window, input_path, opt);
 
     std::string output_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\";
-    std::string filename = "ziobioearioghaersiughipuerahgipuerahgpiuerahgpiuearhipureagpiu.jpg";
+    std::string filename = "chuj.jpg";
     *input_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\f.jpg";
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
@@ -136,13 +143,14 @@ int main( int argc, char* argv[] ) {
         }
 
         if (opt.update_depth){
-            depth = adjustDepth(input_depth, depth_contrast, depth_brigthness, depth_highlights, opt);
+//            depth = adjustDepth(input_depth, depth_contrast, depth_brigthness, depth_highlights, opt);
             convertMatToTexture(depth, depth_texture);
             opt.update_depth= false;
             opt.update_stereo = opt.live_refresh;
             opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
 
-            depth.convertTo(depth_float, CV_32FC1);
+            cv::cvtColor(depth, depth_float, cv::COLOR_BGR2GRAY);
+            depth_float.convertTo(depth_float, CV_32FC1);
 
             double depth_min, depth_max;
             minMaxLoc(depth_float, &depth_min, &depth_max);

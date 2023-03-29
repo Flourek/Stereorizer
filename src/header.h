@@ -12,6 +12,7 @@
 
 struct GuiSettings {
     bool depth_invert       = false;
+    bool depth_grayscale    = false;
     bool anaglyph_overlay   = false;
     bool mask_overlay       = false;
     bool live_refresh       = true;
@@ -116,4 +117,12 @@ bool checkSizeMismatch(const cv::Mat& image, const cv::Mat& depth);
 cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt);
 
 void importModules();
+
+void TextCentered(const std::string& text);
+
+void GuiFileDialog(const std::string& text, std::string& path);
+
+bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v_max);
+
+void RightAlignNextItem();
 #endif //STEREOREO_HEADER_H

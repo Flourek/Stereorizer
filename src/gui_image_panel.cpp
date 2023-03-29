@@ -13,7 +13,7 @@ using namespace ImGui;
 void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, GLuint texture, std::string &input_path,
                    float &deviation) {
     BeginGroup();
-    Text(" [Left eye], %f", GetIO().Framerate);
+    Text(" Left eye");
 
     BeginChild("LeftImageContainer", ImVec2(target_width, target_width), true, ImGuiWindowFlags_NoScrollbar);
         ImageCenteredWithAspect(texture, target_width, image.cols, image.rows);
@@ -22,16 +22,8 @@ void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, G
     BeginChild("Input File", ImVec2(target_width, 0));
     if( CollapsingHeader("Imput fil", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent(8.0f);
-        AlignTextToFramePadding();
-        Text("File:");
-        SameLine();
-        InputText("##output_path", &input_path, ImGuiInputTextFlags_ReadOnly);
-        SameLine();
-        Button(ICON_FA_FOLDER_OPEN);
 
-
-        opt.update_stereo |= SliderInt("Mask", &opt.mask_blur_size, 1.0f, 255.0f);
-        opt.update_stereo |= Checkbox("MaskOpacity", &opt.mask_blur);
+        GuiFileDialog("File:", input_path);
 
         Unindent(8.0f);
         NewLine();
@@ -58,19 +50,19 @@ void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, G
 //    }
 
 //    BeginChild("chujj", ImVec2(target_width, 0));
-    if( CollapsingHeader("Inpainting", ImGuiTreeNodeFlags_DefaultOpen) ){
+    if( CollapsingHeader("Inpainting", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed) ){
+        Indent(8.0f);
+
+        opt.update_stereo |= RightAlignedSlider("Ciul", (float*) &opt.y, 0.0f, 10.0f);
+        opt.update_stereo |= RightAlignedSlider("Chuj", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
+        RightAlignNextItem();
         opt.update_stereo |= Checkbox("Glitched", &opt.inpainting_glitch);
-        opt.update_stereo |= SliderInt("Masky", &opt.y, 0.0f, 10.0f);
+        RightAlignNextItem();
+        opt.update_stereo |= Checkbox("MaskOpacity", &opt.mask_blur);
+        Unindent(8.0f);
         NewLine();
     }
-//    EndChild();
 
-//    PushStyleColor(ImGuiCol_ChildBg, ImVec4(0, 0, 0, 0));
-//    BeginChild("Black spacer", ImVec2(target_width, 100));
-//    EndChild();
-//    PopStyleColor();
-
-//    BeginChild("StereoOptions", ImVec2(target_width, 0));
     if( CollapsingHeader("Stereo", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent(8.0f);
         SeparatorText("Deviation");

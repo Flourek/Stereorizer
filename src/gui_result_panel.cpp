@@ -13,7 +13,10 @@ void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv:
                     const cv::Mat &image, float width, std::string &output_path) {
     BeginGroup();
 
-    Text("Result - \"Right eye\"");
+    Text(" Right eye");
+    SameLine(0, width - 150);
+    Text(" FPS: %.0f", GetIO().Framerate);
+
     BeginChild("ResultImageContainer", ImVec2(width, width), true, ImGuiWindowFlags_NoScrollbar);
 
         // Main image
@@ -82,8 +85,6 @@ void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv:
 
             End();
 
-
-
         }
     EndChild();
 
@@ -118,32 +119,33 @@ void GuiResultPanel(GuiSettings &opt, GLuint &texture, GLuint &zoom_texture, cv:
         Indent( 8.0f );
 
         BeginChild("Include", ImVec2(0.3 * width, 100));
-        Checkbox("Side By Side", &opt.save_sbs    );
-        Checkbox("Stereo",       &opt.save_stereo );
-        Checkbox("Depth",        &opt.save_depth  );
-        Checkbox("Mask",         &opt.save_mask  );
+            Checkbox("Side By Side", &opt.save_sbs    );
+            Checkbox("Stereo",       &opt.save_stereo );
+            Checkbox("Depth",        &opt.save_depth  );
+            Checkbox("Mask",         &opt.save_mask  );
         EndChild();
         SameLine();
+
         BeginChild("Save", ImVec2(0, 100));
-        if ( ImGui::Button("Save [S]", ImVec2(0.32 * width, 32)) ){
+            if ( ImGui::Button("Save [S]", ImVec2(0.32 * width, 32)) ){
 
-            if(opt.save_stereo)
-                cv::imwrite(output_path + "chuj_RIGHT.jpg" , result);
-            if(opt.save_mask)
-                cv::imwrite(output_path + "chuj_MASK.jpg" , maskPostProcess(mask, opt));
+                if(opt.save_stereo)
+                    cv::imwrite(output_path + "chuj_RIGHT.jpg" , result);
+                if(opt.save_mask)
+                    cv::imwrite(output_path + "chuj_MASK.jpg" , maskPostProcess(mask, opt));
 
 
-            if(opt.save_sbs){
-                cv::Mat sbs;
-                cv::hconcat(image, result, sbs);
-                cv::imwrite(output_path + "chuj_SBS_FLAT.jpg" , sbs);
+                if(opt.save_sbs){
+                    cv::Mat sbs;
+                    cv::hconcat(image, result, sbs);
+                    cv::imwrite(output_path + "chuj_SBS_FLAT.jpg" , sbs);
+                }
+
+
             }
 
-
-        }
-
-        if ( ImGui::Button("Show in Explorer", ImVec2(0.32 * width, 32)) )
-            cv::imwrite(output_path + "chuj_SBS_FLAT.jpg" ,result);
+            if ( ImGui::Button("Show in Explorer", ImVec2(0.32 * width, 32)) )
+                cv::imwrite(output_path + "chuj_SBS_FLAT.jpg" ,result);
         EndChild();
 
         AlignTextToFramePadding();
