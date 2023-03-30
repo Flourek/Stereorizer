@@ -22,14 +22,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 set ( project_files
         src/main.cpp
-        src/generate_stereo.cpp
         src/gui_functionality.cpp
         src/gui_image_panel.cpp
         src/gui_depth_panel.cpp
         src/header.h
         src/gui_result_panel.cpp
         src/midas.cpp
-        )
+        src/Stereo.cpp
+        src/Stereo.h
+        src/Image.cpp
+        src/Image.h
+        src/Depth.cpp
+        src/Depth.h)
 
 set( imgui_files
         ${IMGUI_DIR}/imconfig.h

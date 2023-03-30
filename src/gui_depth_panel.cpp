@@ -5,22 +5,17 @@
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "header.h"
-#include "../libs/IconsFontAwesome5.h"
-#include "../libs/IconsFontAwesome5.h"
 
 std::string model_path = "C:/Users/Flourek/CLionProjects/Stereorizer/weights/dpt_beit_large_512.pt";
 
-using namespace ImGui;
-void GuiDepthPanel(GuiSettings &flags, GLuint depth_texture, float width, float input_aspect, std::string filename,
-                   std::string input_path, std::string output_path, float &depth_contrast, float &depth_brigthness,
-                   float &depth_highlights, cv::Mat &input_depth, cv::Mat &input)
-{
+void GuiDepthPanel(Image &depth, GuiSettings &opt, float width) {
+    using namespace ImGui;
     BeginGroup();
 
     Text(" Depth Map");
 
     BeginChild("DepthImageContainer", ImVec2(width, width), true, ImGuiWindowFlags_NoScrollbar);
-        ImageCenteredWithAspect(depth_texture, width, input_depth.cols, input_depth.rows);
+    ImageCenteredWithAspect(depth.texture, width, depth.aspect);
     EndChild();
 
     BeginChild("DepthContainer", ImVec2(width, 0));
@@ -28,14 +23,14 @@ void GuiDepthPanel(GuiSettings &flags, GLuint depth_texture, float width, float 
         BeginChild("Seethe", ImVec2(0, 180), false);
         Indent( 8.0f );
 
-        GuiFileDialog("MiDaS", filename);
-        GuiFileDialog("Model", filename);
+        GuiFileDialog("MiDaS", depth.path);
+        GuiFileDialog("Model", depth.path);
 
         NewLine();
         RightAlignNextItem();
         if( Button("Generate", ImVec2(300, 20)) ){
-            generateDepthMap(input_path, model_path, input_depth, flags);
-            flags.update_depth |= true;
+//            generateDepthMap(input_path, model_path, input_depth, opt);
+            opt.update_depth |= true;
         }
         Unindent( 8.0f );
         EndChild();
@@ -43,13 +38,13 @@ void GuiDepthPanel(GuiSettings &flags, GLuint depth_texture, float width, float 
 
     if( CollapsingHeader("Adjustments", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent( 8.0f );
-        flags.update_depth |= RightAlignedSlider("Contrast",    &depth_contrast,   0.0f, 1.0f);
-        flags.update_depth |= RightAlignedSlider("Brigthness",  &depth_brigthness, 0.0f, 1.0f);
-        flags.update_depth |= RightAlignedSlider("Highlights",  &depth_highlights, 0.0f, 1.0f);
+        opt.update_depth |= RightAlignedSlider("Contrast", &opt.depth_contrast, 0.0f, 1.0f);
+        opt.update_depth |= RightAlignedSlider("Brigthness", &opt.depth_brigthness, 0.0f, 1.0f);
+        opt.update_depth |= RightAlignedSlider("Highlights", &opt.depth_highlights, 0.0f, 1.0f);
         RightAlignNextItem();
-        flags.update_depth |= ImGui::Checkbox("Invert",         &flags.depth_invert);
+        opt.update_depth |= ImGui::Checkbox("Invert", &opt.depth_invert);
         RightAlignNextItem();
-        flags.update_depth |= ImGui::Checkbox("Grayscale",      &flags.depth_grayscale);
+        opt.update_depth |= ImGui::Checkbox("Grayscale", &opt.depth_grayscale);
         Unindent( 8.0f );
     }
 

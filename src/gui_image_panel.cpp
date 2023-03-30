@@ -6,50 +6,51 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "GL/gl3w.h"
 #include "header.h"
+#include "Image.h"
 #include "../libs/IconsFontAwesome5.h"
 
-using namespace ImGui;
 
-void GuiImagePanel(GuiSettings &opt, const cv::Mat &image, float target_width, GLuint texture, std::string &input_path,
-                   float &deviation) {
+void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
+
+    using namespace ImGui;
+
     BeginGroup();
     Text(" Left eye");
 
     BeginChild("LeftImageContainer", ImVec2(target_width, target_width), true, ImGuiWindowFlags_NoScrollbar);
-        ImageCenteredWithAspect(texture, target_width, image.cols, image.rows);
+    ImageCenteredWithAspect(left.texture, target_width, left.aspect);
     EndChild();
 
     BeginChild("Input File", ImVec2(target_width, 0));
     if( CollapsingHeader("Imput fil", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent(8.0f);
 
-        GuiFileDialog("File:", input_path);
+        GuiFileDialog("File:", left.path);
 
         Unindent(8.0f);
         NewLine();
     }
 //    EndChild();
 
-//    if (opt.size_mismatch){
-//        BeginChild("scrolling", ImVec2(243, 35));
-////                        PushStyleColor(ImGuiCol_ChildBg, IM_COL32(200,20,20,255));
-//        PushItemWidth(235);
-//        SameLine(6);
-//
-//        AlignTextToFramePadding();
-//        TextWrapped("Source image and the depth image must be the same size");
-//        EndChild();
-//
-//        SameLine(0, 0);
-//
-//        BeginChild("scrollinge", ImVec2(60, 35));
-//        PushStyleColor(ImGuiCol_Button, IM_COL32(150,20,20,255));
-//        Button("Resize", ImVec2(60, 35));
-//        PopStyleColor(2);
-//        EndChild();
-//    }
+    if (opt.size_mismatch){
+        BeginChild("scrolling", ImVec2(243, 35));
+//                        PushStyleColor(ImGuiCol_ChildBg, IM_COL32(200,20,20,255));
+        PushItemWidth(235);
+        SameLine(6);
 
-//    BeginChild("chujj", ImVec2(target_width, 0));
+        AlignTextToFramePadding();
+        TextWrapped("Source image and the depth image must be the same size");
+        EndChild();
+
+        SameLine(0, 0);
+
+        BeginChild("scrollinge", ImVec2(60, 35));
+        PushStyleColor(ImGuiCol_Button, IM_COL32(150,20,20,255));
+        Button("Resize", ImVec2(60, 35));
+        PopStyleColor(2);
+        EndChild();
+    }
+
     if( CollapsingHeader("Inpainting", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed) ){
         Indent(8.0f);
 

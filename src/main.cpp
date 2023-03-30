@@ -6,9 +6,14 @@
 #include "misc/cpp/imgui_stdlib.h"
 #include "GL/gl3w.h"
 #include "GLFW/glfw3.h"
-#include "header.h"
 #include "../libs/IconsFontAwesome5.h"
 #include <Python.h>
+
+#include "Image.h"
+#include "Depth.h"
+#include "header.h"
+#include "Stereo.h"
+
 
 #include "Tracy.hpp"
 #define TRACY_ENABLE
@@ -17,18 +22,7 @@
 #define SmallImageSize 0.24*vw
 #define ResultImageSize 0.4*vw
 
-void chuj(const cv::Mat& img, GLuint& texture, int scale){
-    ZoneScoped;
 
-    cv::Mat e;
-    cv::resize(img, e, cv::Size(img.cols / scale, img.rows / scale));
-
-    cv::cvtColor(e, e, cv::COLOR_BGR2BGRA);
-
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, e.cols, e.rows, GL_BGRA,
-                    GL_UNSIGNED_BYTE, e.data);
-}
 
 
 int main( int argc, char* argv[] ) {
@@ -37,8 +31,6 @@ int main( int argc, char* argv[] ) {
     if( !glfwInit() ){
         return -1;
     }
-
-    std::cout << argv[0] << std::endl;
 
     // Get monitor resolution
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
@@ -49,6 +41,7 @@ int main( int argc, char* argv[] ) {
     glfwMakeContextCurrent( window );
     glfwSwapInterval( 1 );
     gl3wInit();
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::CreateContext();
@@ -58,8 +51,7 @@ int main( int argc, char* argv[] ) {
     Py_Initialize();
 
 
-
-
+    // ImGui
     ImGuiIO& io = ImGui::GetIO();
     ImGuiStyle& style = ImGui::GetStyle();
     style.FrameRounding = 3.0f;
@@ -86,17 +78,15 @@ int main( int argc, char* argv[] ) {
 
 
     GuiSettings opt;
-    static float depth_contrast = 0.5f;
-    static float depth_brigthness = 0.5f;
-    static float depth_highlights = 0.5f;
-    static float deviation = 30.0f;
 
+    Image left("../img/f.jpg", opt);
+    Depth depth("../img/f_DEPTH.png", opt);
+    Image right("../img/f.jpg", opt);
 
-    cv::Mat input_image = cv::imread("../img/f.jpg", cv::IMREAD_COLOR );
-    cv::Mat input_depth = cv::imread( "../img/f_DEPTH.png", cv::IMREAD_COLOR );
+    Stereo stereo = Stereo(left, depth, right, opt.deviation);
 
-
-    float input_aspect = (float)input_image.rows / input_image.cols;
+//    cv::imshow("w", left.display_BGRA);
+//    int e = cv::waitKey(0);
 
     auto input_path = std::make_shared<std::string>();
     dragDropInputFile(window, input_path, opt);
@@ -106,15 +96,9 @@ int main( int argc, char* argv[] ) {
     *input_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\f.jpg";
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
-    cv::Mat image, depth, result, mask;
+
     cv::Mat depth_float;
-    result = input_image.clone();
-    Stereo stereo = Stereo(input_image, depth, result, opt.deviation);
 
-
-    result = input_image.clone();
-    depth = input_depth.clone();
-    convertMatToTexture(result, result_texture, GL_LINEAR, 1);
 
     while(!glfwWindowShouldClose(window)){
 
@@ -130,58 +114,46 @@ int main( int argc, char* argv[] ) {
         opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
         if (opt.update_input){
-            changeInputImage(input_image, *input_path, depth, opt);
-            convertMatToTexture(input_image, image_texture);
+            left.changeImage(*input_path);
+//            changeInputImage(input_image, *input_path, depth, opt);
+//            convertMatToTexture(input_image, image_texture);
 
-            opt.update_input = false;
-            opt.update_depth = true;
-            opt.update_stereo = opt.live_refresh;
-            opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
+//            opt.update_input = false;
+//            opt.update_depth = true;
+//            opt.update_stereo = opt.live_refresh;
+//            opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
 
-            stereo.left = input_image;
+//            stereo.left = input_image;
 
         }
 
         if (opt.update_depth){
 //            depth = adjustDepth(input_depth, depth_contrast, depth_brigthness, depth_highlights, opt);
-            convertMatToTexture(depth, depth_texture);
+//            convertMatToTexture(depth, depth_texture);
             opt.update_depth= false;
             opt.update_stereo = opt.live_refresh;
-            opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
+//            opt.size_mismatch = Image::compareSize(left, depth);
 
-            cv::cvtColor(depth, depth_float, cv::COLOR_BGR2GRAY);
-            depth_float.convertTo(depth_float, CV_32FC1);
-
-            double depth_min, depth_max;
-            minMaxLoc(depth_float, &depth_min, &depth_max);
-
-            if (depth_min != depth_max)
-                depth_float = (depth_float - depth_min) / (depth_max - depth_min);
-            else
-                depth_float = depth_float / 255.0;
-            result = input_image.clone();
-            convertMatToTexture(result, result_texture, GL_LINEAR, 2);
-            stereo.depth = depth_float;
 
         }
 
-
+//
         if (!opt.size_mismatch){
-            ZoneScopedN("Stereo");
+//            ZoneScopedN("Stereo");
 
-            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
-                result = updateStereo(stereo, opt);
-                opt.force_update = false;
+//            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
+//                right.mat = updateStereo(stereo, opt);
+//                opt.force_update = false;
 
-                if (opt.mask_overlay){
-                    cv::Mat display_mask = maskPostProcess(stereo.mask, opt);
-                    result += display_mask;
-                }
+//                if (opt.mask_overlay){
+//                    cv::Mat display_mask = maskPostProcess(stereo.mask, opt);
+//                    result += display_mask;
+//                }
 
 //                convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
-                chuj(result, result_texture, 2);
-                opt.update_stereo = false;
-            }
+//                right.updateTexture();
+//                opt.update_stereo = false;
+//            }
         }
 
 
@@ -196,14 +168,13 @@ int main( int argc, char* argv[] ) {
             Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
             Indent(16.0f);
-            GuiImagePanel(opt, input_image, SmallImageSize, image_texture, *input_path, deviation);
+            GuiImagePanel(left, opt, SmallImageSize);
 
             SameLine(0, 0.04*vw);
-            GuiDepthPanel(opt, depth_texture, SmallImageSize, input_aspect, filename, *input_path, output_path,
-                          depth_contrast, depth_brigthness, depth_highlights, input_depth, image);
+            GuiDepthPanel(depth, opt, SmallImageSize);
 
             SameLine(0, 0.04*vw);
-            GuiResultPanel(opt, result_texture, zoom_texture, result, mask, input_image, ResultImageSize, output_path);
+            GuiResultPanel(stereo, opt, ResultImageSize);
 
             ImGui::End();
         }
