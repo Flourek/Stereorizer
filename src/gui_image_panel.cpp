@@ -74,7 +74,12 @@ void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
         Text("x");
         SetNextItemWidth(45);
         SameLine();
-        opt.update_stereo |= InputText("##Multipliere", &opt.deviation_multiplier, ImGuiInputTextFlags_CharsDecimal);
+        static std::string chuj = "1.0";
+        opt.update_stereo |= InputText("##Multipliere", &chuj, ImGuiInputTextFlags_CharsDecimal);
+        try{
+            opt.deviation_multiplier = std::stof(chuj);
+        } catch (std::exception& e) {}
+
         NewLine();
         opt.force_update |= Button("Stereoify");
 

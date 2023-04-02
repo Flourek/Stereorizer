@@ -9,23 +9,26 @@
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 #include "Image.h"
-//#include "Stereo.h"
 
 struct GuiSettings {
-    bool depth_invert       = false;
-    bool depth_grayscale    = false;
-    bool anaglyph_overlay   = false;
-    bool mask_overlay       = false;
-    bool live_refresh       = true;
-    bool mask_blur          = false;
-    int mask_blur_size      = 50;
-    double viewport_scale   = 2;
-
+    // Logic flags
     bool update_stereo      = false;
     bool update_input       = true;
     bool update_depth       = false;
     bool force_update       = false;
     bool size_mismatch      = false;
+    bool live_refresh       = true;
+    bool midas_run          = false;
+    bool midas_first_execution = true;
+
+
+    // Variables
+    bool depth_invert       = false;
+    bool anaglyph_overlay   = false;
+    bool mask_overlay       = false;
+    bool mask_blur          = false;
+    int mask_blur_size      = 50;
+    double viewport_scale   = 2;
 
     bool save_sbs           = true;
     bool save_depth         = false;
@@ -36,23 +39,32 @@ struct GuiSettings {
     float depth_brigthness = 0.5f;
     float depth_highlights = 0.5f;
 
+    int depth_color_map     = 1;
     bool inpainting_glitch  = false;
+
+    // Paths
+    std::string chuj;
+    std::string model_path = "C:/Users/Flourek/CLionProjects/Stereorizer/weights/dpt_beit_large_512.pt";
+    std::string midas_path = "C:/Users/Flourek/CLionProjects/Stereorizer/MiDaS/";
+    std::string output_path = "C:/Users/Flourek/CLionProjects/Stereorizer/output/";
+
+    float v[5] = { 0.950f, 0.050f, 0.795f, 0.035f };
+    int chuej = 3;
 
     bool zoom_window_stick  = false;
     float zoom_level        = 4.0f;
     ImVec2 zoom_click_pos;
 
     float deviation         = 100.0f;
-    std::string deviation_multiplier  = "1.0";
+    float deviation_multiplier = 1.0f;
 
-    bool midas_first_execution = true;
 
     int x = 1;
     int y = 1;
     int z = 1;
 
-    std::string chuj;
 };
+
 
 
 
@@ -76,7 +88,7 @@ cv::Mat updateStereo(class Stereo &stereo, GuiSettings &opt);
 // Gui
 
 
-void GuiDepthPanel(class Image& depth, GuiSettings &opt, float width);
+void GuiDepthPanel(class Depth &depth, GuiSettings &opt, float width);
 
 void GuiImagePanel(class Image& left, GuiSettings &opt, float target_width);
 
@@ -96,13 +108,13 @@ void RightAlignNextItem();
 
 // Depth
 
-int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt);
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt);
 
 void importModules();
 
 bool checkSizeMismatch(const cv::Mat& image, const cv::Mat& depth);
 
-cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt);
+cv::Mat maskPostProcess(const cv::Mat &mask, const GuiSettings &opt);
 
 
 #endif //STEREOREO_HEADER_H

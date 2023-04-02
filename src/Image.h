@@ -18,9 +18,8 @@ public:
     float aspect;
     std::string path;
     std::string filename;
-    struct GuiSettings &opt;
 
-    Image(const std::string& path, GuiSettings& opt);
+    Image(const std::string& path);
 
     void changeImage(const std::string &new_path);
 
@@ -30,7 +29,9 @@ public:
 
     void updateTexture();
 
-    static bool compareSize(const Image& a, const Image& b);
+    void convertToDisplay();
+
+    static bool checkMismatch(const Image& a, const Image& b);
 
 
 };

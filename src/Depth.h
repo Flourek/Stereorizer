@@ -10,12 +10,15 @@ class Depth : public Image {
 public:
     cv::Mat original;
     cv::Mat float_mat;
+    int color_map = 1; // Inferno
 
-    Depth(const std::string &path, struct GuiSettings &opt);
+    Depth(const std::string &path);
 
-    void convert_to_float();
+    void convertToFloat();
 
-    void adjust();
+    void convertToDisplay();
+
+    void adjust(ImVec2 points[]);
 
 };
 

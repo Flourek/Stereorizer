@@ -20,10 +20,28 @@ Stereo::Stereo(Image &left, Depth &depth, Image &right, float deviation)
 }
 
 
+void Stereo::run(const GuiSettings& opt) {
+    deviation = opt.deviation * opt.deviation_multiplier;
+    mask = cv::Mat(left.mat.rows, left.mat.cols, CV_8UC1);
+
+    mask = 0;
+    right.mat = 0;
+
+    Stereo::ShiftPixels::run(*this);
+    Stereo::Inpaint::run(*this);
+
+    if(opt.mask_overlay)
+        right.mat += maskPostProcess(opt);
+
+    right.convertToDisplay();
+    right.updateTexture();
+
+}
+
+
 
 cv::Mat Stereo::ShiftPixels::run(Stereo &stereo) {
     Stereo::ShiftPixels sp(stereo);
-    stereo.mask =0;
     stereo.depth.float_mat.forEach<float>( sp );
     return stereo.right.mat;
 }
@@ -31,7 +49,6 @@ cv::Mat Stereo::ShiftPixels::run(Stereo &stereo) {
 
 // Functor for use with foreach() on a depth map
 void Stereo::ShiftPixels::operator () (float &pixel, const int * position) const {
-//    std::cout << "chujxD" << std::endl;
     int row = position[0];
     int col = position[1];
 
@@ -82,6 +99,68 @@ void Stereo::Inpaint::operator () (uchar &pixel, const int * position) const {
         }
     }
 
+}
+
+cv::Mat Stereo::maskPostProcess(const GuiSettings &opt) {
+    cv::Mat blurred, res = mask.clone();
+
+    if(res.channels() == 3)
+        cvtColor(res, res, cv::COLOR_BGR2GRAY);
+
+//    std::cout << res.channels() << " " << CV_8UC1 << std::endl;
+
+    // Invert
+    bitwise_not(res, res);
+
+    // Kernel sizes
+    int morph = 2;
+    int erode = 2;
+    int blur  = 11;
+
+    cv::Mat kernelEx = cv::Mat::ones(morph, morph, CV_8UC1);
+    cv::Mat kernel_erode = cv::Mat::ones(erode, erode, CV_8UC1);
+
+    // Remove noise, patch holes, smooth edges
+    cv::morphologyEx(res, res, cv::MORPH_CLOSE, kernelEx);
+    cv::erode(res, res, kernel_erode);
+    cv::blur(res, res, cv::Size(blur, blur) );
+    cv::threshold(res, res, 127,255, cv::THRESH_BINARY);
+    cv::erode(res, res, erode);
+
+    if(opt.mask_blur){
+
+        // Get the right edge of each island
+        cv::Mat edge(res.rows, res.cols, CV_8UC1);
+        typedef uchar Pixel;
+
+
+        float opacity_step = (float) 255 / opt.mask_blur_size;
+
+        // this is litteraly 10 times faster than normal nested for loops
+        edge.forEach<Pixel> (
+                [&res, &edge, &opacity_step, opt] (Pixel &pixel, const int * position) -> void {
+
+                    if(position[1] == 0 || position[1] == res.cols) return;
+
+                    Pixel previous = res.at<Pixel>(position[0], position[1] - 1);
+                    Pixel current  = res.at<Pixel>(position[0], position[1]);
+                    if( previous == 255 && current == 0){
+
+                        for (int i = 0; i < opt.mask_blur_size; ++i) {
+                            if ( position[1] + i > res.cols ) return;
+                            edge.at<Pixel>(position[0], position[1] + i) = cv::saturate_cast<uchar>(255 - i * opacity_step * 4);
+                        }
+                    }
+                }
+        );
+
+        res += edge;
+    }
+
+    if(res.channels() == 1)
+        cvtColor(res, res, cv::COLOR_GRAY2BGR);
+
+    return res;
 }
 
 Mat anaglyphize(Mat left_img, Mat right_img){

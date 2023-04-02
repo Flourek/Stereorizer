@@ -19,6 +19,10 @@ public:
 
     Stereo(Image &left, Depth &depth, Image &right, float deviation);
 
+    void run(const GuiSettings& opt);
+
+    cv::Mat maskPostProcess(const GuiSettings &opt);
+
     struct ShiftPixels {
         Stereo& stereo;
 

@@ -17,46 +17,9 @@
 
 
 
-cv::Mat updateStereo(Stereo &stereo, GuiSettings &opt) {
-    ZoneScoped;
-
-    cv::Mat result, input_resized, depth_resized;
-//    result = input.clone();
-//
-//    cv::Size new_size( input.cols / opt.viewport_scale, input.rows / opt.viewport_scale);
-//    cv::resize(input, input_resized, new_size);
-//    cv::resize(depth, depth_resized, new_size);
-
-    // Normalize for every image size and multiply by the ui setting
-    float multiplier = 1.0f;
-    try{
-        multiplier = stof(opt.deviation_multiplier);
-    } catch (std::exception& e) {}
-
-    float deviation = opt.deviation;
-    deviation *= ((float) stereo.left.mat.cols / 1000);
-    deviation *= multiplier;
-    stereo.deviation = deviation;
 
 
-    if(!opt.inpainting_glitch)
-        stereo.right.mat = 0;
-
-    result = Stereo::ShiftPixels::run(stereo);
-
-    if(!opt.inpainting_glitch)
-        result = Stereo::Inpaint::run(stereo);
-
-
-    if (opt.anaglyph_overlay)
-//        result = anaglyphize(stereo.left, result);
-
-    return result;
-}
-
-
-
-cv::Mat maskPostProcess(const cv::Mat &mask, GuiSettings &opt) {
+cv::Mat maskPostProcess(const cv::Mat &mask, const GuiSettings &opt) {
     cv::Mat blurred, res = mask.clone();
 
     if(res.channels() == 3)
@@ -176,7 +139,10 @@ bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v
         ImGui::Text("%s", label.c_str());
     ImGui::EndChild();
     ImGui::SameLine();
-    return  ImGui::SliderFloat("##Masky", x, v_min, v_max);
+
+    std::string hidden_label = "##" + label;
+
+    return  ImGui::SliderFloat(hidden_label.c_str(), x, v_min, v_max);
 }
 
 

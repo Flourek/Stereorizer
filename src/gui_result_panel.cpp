@@ -127,16 +127,16 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
         BeginChild("Save", ImVec2(0, 100));
             if ( ImGui::Button("Save [S]", ImVec2(0.32 * width, 32)) ){
 
-                if(opt.save_stereo)
+//                if(opt.save_stereo)
 //                    cv::imwrite(output_path + "chuj_RIGHT.jpg" , right.original);
                 if(opt.save_mask)
-//                    cv::imwrite(output_path + "chuj_MASK.jpg" , maskPostProcess(mask, opt));
+                    cv::imwrite(opt.output_path + "chuj_MASK.jpg" , stereo.maskPostProcess(opt));
 
 
                 if(opt.save_sbs){
                     cv::Mat sbs;
-//                    cv::hconcat(image, result, sbs);
-//                    cv::imwrite(output_path + "chuj_SBS_FLAT.jpg" , sbs);
+                    cv::hconcat(stereo.left.mat, stereo.right.mat, sbs);
+                    cv::imwrite(opt.output_path + "chuj_SBS_FLAT.jpg" , sbs);
                 }
 
 

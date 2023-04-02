@@ -4,6 +4,7 @@
 #include "opencv2/opencv.hpp"
 #include "iostream"
 #include "header.h"
+#include "Depth.h"
 
 void importModules() {
 
@@ -15,7 +16,7 @@ void importModules() {
 
 }
 
-int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &depth_image, GuiSettings &opt) {
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt) {
 
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);
@@ -57,7 +58,7 @@ int generateDepthMap(std::string input_path, std::string model_path, cv::Mat &de
         wargv = nullptr;
     }
 
-    depth_image = cv::imread(result_path);
+    depth = Depth(result_path);
 
     return 1;
 

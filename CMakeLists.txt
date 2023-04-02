@@ -17,6 +17,7 @@ find_package( OpenCV REQUIRED )
 find_package( OpenGL REQUIRED )
 find_package( PythonLibs REQUIRED)
 
+set(APP_ICON_RESOURCE_WINDOWS "res/icon.rc")
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
@@ -49,6 +50,8 @@ set( imgui_files
         ${IMGUI_DIR}/imstb_truetype.h
         ${IMGUI_DIR}/misc/cpp/imgui_stdlib.h
         ${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp
+        ${LIBS_DIR}/imgui-bezier/bezier.hpp
+        ${LIBS_DIR}/imgui-bezier/bezier.cpp
         )
 
 set( imgui_impl_files
@@ -60,6 +63,7 @@ set( imgui_impl_files
 include_directories( ${IMGUI_DIR} )
 include_directories( ${IMGUI_DIR}/backends )
 include_directories( ${IMGUI_DIR}/examples )
+include_directories( ${LIBS_DIR}/imgui-bezier )
 
 set( nfd_files
         ${NFD_DIR}/src/include/nfd.h
@@ -83,7 +87,15 @@ set( icons
         ${LIBS_DIR}/pyhelper.h
         )
 
-add_executable( Stereorizer ${imgui_files} ${imgui_impl_files} ${gl3w} ${nfd_files} ${icons} ${project_files} )
+add_executable( Stereorizer
+        ${imgui_files}
+        ${imgui_impl_files}
+        ${gl3w}
+        ${nfd_files}
+        ${icons}
+        ${project_files}
+        ${APP_ICON_RESOURCE_WINDOWS}
+        )
 
 target_compile_definitions(Stereorizer PUBLIC TRACY_ENABLE=1 )
 add_subdirectory(tracy)
@@ -101,31 +113,7 @@ target_link_libraries( Stereorizer glfw)
 target_link_libraries( Stereorizer OpenGL::GL)
 include_directories( ${LIBS}/glfw/include)
 
-#include( ExternalProject )
-#ExternalProject_Add(
-#        glfw PREFIX ${LIBS_DIR}/glfw
-#        GIT_REPOSITORY https://github.com/glfw/glfw.git
-#        GIT_TAG 3.3
-#        CMAKE_ARGS
-#        "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-#        "-DCMAKE_BUILD_TYPE=Debug"
-#        "-DGLFW_BUILD_DOCS=OFF"
-#        "-DGLFW_BUILD_EXAMPLES=OFF"
-#        "-DGLFW_BUILD_TESTS=OFF"
-#        "-DBUILD_SHARED_LIBS=OFF"
-#)
-#ExternalProject_Get_Property( glfw INSTALL_DIR )
-#message(E: ${INSTALL_DIR})
-#
-#set( GLFW_DIR ${INSTALL_DIR} )
-#set( GLFW_INCLUDE_DIR ${GLFW_DIR}/include )
-#set( GLFW_LIBRARIES   ${GLFW_DIR}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}glfw3${CMAKE_STATIC_LIBRARY_SUFFIX} )
-#add_dependencies( Stereorizer glfw )
-
-
-
 include_directories( ${OPENGL_INCLUDE_DIR} )
-
 include_directories( ${PYTHON_INCLUDE_DIRS})
 
 target_link_libraries( Stereorizer ${PYTHON_LIBRARIES})

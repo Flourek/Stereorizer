@@ -5,7 +5,7 @@
 #include "Image.h"
 #include "GL/glcorearb.h"
 
-Image::Image(const std::string &path, GuiSettings& opt) : opt(opt) {
+Image::Image(const std::string &path) {
     display_BGRA = cv::Mat(mat.rows, mat.cols, CV_8UC4);
     changeImage(path);
     createTexture();
@@ -14,7 +14,7 @@ Image::Image(const std::string &path, GuiSettings& opt) : opt(opt) {
 
 
 void Image::createTexture() {
-    cv::cvtColor(mat, display_BGRA, cv::COLOR_BGR2BGRA);
+    convertToDisplay();
 
     // Generate the texture
     glGenTextures( 1, &texture );
@@ -30,6 +30,9 @@ void Image::createTexture() {
 
 }
 
+void Image::convertToDisplay(){
+    cv::cvtColor(mat, display_BGRA, cv::COLOR_BGR2BGRA);
+};
 
 void Image::updateTexture() {
 
@@ -40,9 +43,6 @@ void Image::updateTexture() {
 
 
 void Image::resize(float scale) {
-    if(scale == -1)
-        scale == opt.viewport_scale;
-
     cv::resize(mat, display_BGRA, cv::Size(mat.cols / scale, mat.rows / scale));
     createTexture();
 }
@@ -64,17 +64,17 @@ void Image::changeImage(const std::string &new_path) {
 
 
     // Resize the input for performance reasons (1000x1000 image = 1)
-    int scale = sqrt( new_image.total() / 1000000 );
-    if (scale == 0) scale = 1;
-    opt.viewport_scale = scale;
+//    int scale = sqrt( new_image.total() / 1000000 );
+//    if (scale == 0) scale = 1;
+//    opt.viewport_scale = scale;
 
 
-    resize(scale);
-//    createTexture();
+//    resize(scale);
+    createTexture();
 
 }
 
 // Returns true if sizes are the same
-bool Image::compareSize(const Image& a, const Image& b){
-    return ( a.mat.size == b.mat.size );
+bool Image::checkMismatch(const Image& a, const Image& b){
+    return ( a.mat.size != b.mat.size );
 }

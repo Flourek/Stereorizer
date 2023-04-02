@@ -1,19 +1,21 @@
+
 #include <iostream>
 #include <opencv2/opencv.hpp>
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
-#include "misc/cpp/imgui_stdlib.h"
+
 #include "GL/gl3w.h"
 #include "GLFW/glfw3.h"
 #include "../libs/IconsFontAwesome5.h"
 #include <Python.h>
-
-#include "Image.h"
 #include "Depth.h"
+
 #include "header.h"
+#include "Image.h"
 #include "Stereo.h"
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #include "Tracy.hpp"
 #define TRACY_ENABLE
@@ -41,6 +43,8 @@ int main( int argc, char* argv[] ) {
     glfwMakeContextCurrent( window );
     glfwSwapInterval( 1 );
     gl3wInit();
+
+    // Setting window icon
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -79,9 +83,9 @@ int main( int argc, char* argv[] ) {
 
     GuiSettings opt;
 
-    Image left("../img/f.jpg", opt);
-    Depth depth("../img/f_DEPTH.png", opt);
-    Image right("../img/f.jpg", opt);
+    Image left("../img/f.jpg");
+    Depth depth("../img/f_DEPTH.png");
+    Image right("../img/f.jpg");
 
     Stereo stereo = Stereo(left, depth, right, opt.deviation);
 
@@ -113,47 +117,41 @@ int main( int argc, char* argv[] ) {
 
         opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
-        if (opt.update_input){
+        if (opt.update_input) {
             left.changeImage(*input_path);
-//            changeInputImage(input_image, *input_path, depth, opt);
-//            convertMatToTexture(input_image, image_texture);
+            right.changeImage(*input_path);
 
-//            opt.update_input = false;
-//            opt.update_depth = true;
-//            opt.update_stereo = opt.live_refresh;
-//            opt.size_mismatch = checkSizeMismatch(input_image, input_depth);
-
-//            stereo.left = input_image;
-
-        }
-
-        if (opt.update_depth){
-//            depth = adjustDepth(input_depth, depth_contrast, depth_brigthness, depth_highlights, opt);
-//            convertMatToTexture(depth, depth_texture);
-            opt.update_depth= false;
+            opt.update_input = false;
+            opt.update_depth = true;
             opt.update_stereo = opt.live_refresh;
-//            opt.size_mismatch = Image::compareSize(left, depth);
-
-
         }
 
-//
+        if (opt.midas_run) {
+            generateDepthMap(*input_path, opt.model_path, depth, opt);
+            depth.createTexture();
+            opt.update_depth = true;
+            opt.midas_run = false;
+        }
+
+        if (opt.update_depth) {
+            depth.convertToFloat();
+            depth.convertToDisplay();
+            depth.updateTexture();
+            opt.update_depth = false;
+            opt.update_stereo = opt.live_refresh;
+        }
+
+        opt.size_mismatch = Image::checkMismatch(left, depth);
+
         if (!opt.size_mismatch){
-//            ZoneScopedN("Stereo");
+            ZoneScopedN("Stereo");
 
-//            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
-//                right.mat = updateStereo(stereo, opt);
-//                opt.force_update = false;
+            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
+                stereo.run(opt);
 
-//                if (opt.mask_overlay){
-//                    cv::Mat display_mask = maskPostProcess(stereo.mask, opt);
-//                    result += display_mask;
-//                }
-
-//                convertMatToTexture(result, zoom_texture, GL_NEAREST, 1);
-//                right.updateTexture();
-//                opt.update_stereo = false;
-//            }
+                opt.force_update = false;
+                opt.update_stereo = false;
+            }
         }
 
 
@@ -161,7 +159,6 @@ int main( int argc, char* argv[] ) {
         using namespace ImGui; {
             static int counter = 0;
             ZoneScopedN("ImGUI");
-
 
             SetNextWindowPos( ImVec2(0,0) );
             SetNextWindowSize( ImVec2(vw, vh) );
