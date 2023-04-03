@@ -28,7 +28,6 @@
 
 
 int main( int argc, char* argv[] ) {
-    ZoneScoped;
 
     if( !glfwInit() ){
         return -1;
@@ -118,8 +117,12 @@ int main( int argc, char* argv[] ) {
         opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
         if (opt.update_input) {
+            ZoneScopedN("Change INput");
+
             left.changeImage(*input_path);
             right.changeImage(*input_path);
+            opt.viewport_scale = left.getScaleSuggestion();
+            stereo.resizeAll(opt.viewport_scale);
 
             opt.update_input = false;
             opt.update_depth = true;
@@ -127,6 +130,8 @@ int main( int argc, char* argv[] ) {
         }
 
         if (opt.midas_run) {
+            ZoneScopedN("Midas");
+
             generateDepthMap(*input_path, opt.model_path, depth, opt);
             depth.createTexture();
             opt.update_depth = true;
@@ -134,14 +139,18 @@ int main( int argc, char* argv[] ) {
         }
 
         if (opt.update_depth) {
+            ZoneScopedN("Depth");
+            std::cout << depth.mat.cols << std::endl;
+            std::cout << left.mat.cols << std::endl;
+            stereo.resized_depth = depth.float_mat;
             depth.convertToFloat();
             depth.convertToDisplay();
             depth.updateTexture();
-            opt.update_depth = false;
             opt.update_stereo = opt.live_refresh;
+            opt.update_depth = false;
         }
 
-        opt.size_mismatch = Image::checkMismatch(left, depth);
+//        opt.size_mismatch = ( left.original.size != depth.original.size );
 
         if (!opt.size_mismatch){
             ZoneScopedN("Stereo");

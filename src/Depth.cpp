@@ -4,12 +4,18 @@
 
 #include "bezier.hpp"
 #include "Depth.h"
+#include "Tracy.hpp"
 
 Depth::Depth(const std::string &path) : Image(path) {
-    cv::cvtColor(mat, mat, cv::COLOR_BGR2GRAY);
-    mat.convertTo(mat, CV_8UC1);
-    convertToFloat();
+    mat = cv::imread(path, CV_16UC1);
+    resize(1);
     original = mat.clone();
+
+    // Initialize lut_preview
+    ImVec2 points[2] = {ImVec2(0,0), ImVec2(1,1)};
+    adjust(points);
+
+    convertToFloat();
     convertToDisplay();
     updateTexture();
 }
@@ -21,29 +27,44 @@ void Depth::convertToFloat() {
     double depth_min, depth_max;
     minMaxLoc(float_mat, &depth_min, &depth_max);
 
+//    std::cout <<  << " " << depth_min << std::endl;
     if (depth_min != depth_max)
         float_mat = (float_mat - depth_min) / (depth_max - depth_min);
     else
-        float_mat = float_mat / 255.0;
+        float_mat = float_mat / UINT16_MAX;
 
+}
+
+
+void Depth::resize(int scale) {
+    cv::resize(mat, mat, cv::Size( mat.cols / scale,  mat.rows / scale));
+    createTexture();
 }
 
 
 void Depth::adjust(ImVec2 points[]) {
 
     mat = original.clone();
-
-    uchar lutValues[256];
-    for (int i = 0; i < 256; ++i) {
-        float x = (float) i / 256;
+    ushort lutValues[UINT16_MAX + 1];
+    for (int i = 0; i < UINT16_MAX; ++i) {
+        float x = (float) i / UINT16_MAX;
         float y = ImGui::CurveValueSmooth(x, 10, points);
-        lutValues[i] = cv::saturate_cast<uchar>( y * 256);
+        lutValues[i] = cv::saturate_cast<ushort>( y * UINT16_MAX);
     }
 
-    cv::Mat colorMap(1, 256, CV_8UC1, lutValues);
+    for (int i = 0; i < UINT16_MAX; i += 256) {
+        for (int j = 0; j < 10; ++j) {
+            lut_preview.mat.at<uchar>(j, i / 256) = lutValues[i] / 256;
+        }        
+    }
+    lut_preview.convertToDisplay();
+    lut_preview.updateTexture();
 
-    cv::LUT(mat, colorMap, mat);
-
+    mat.forEach<ushort>(
+        [&lutValues] ( ushort &pixel, const int * position ){
+            pixel = lutValues[pixel];
+        }
+    );
 
 
 //
@@ -76,6 +97,8 @@ void Depth::adjust(ImVec2 points[]) {
 void Depth::convertToDisplay() {
 
     cv::Mat new_display = mat.clone();
+    new_display /= 255;
+    new_display.convertTo(new_display, CV_8UC3);
 
     if(color_map != 0) {                                      // 0 for grayscale
         int map;
@@ -95,8 +118,9 @@ void Depth::convertToDisplay() {
                 break;
         }
 
-        cv::applyColorMap(mat, new_display, map);
+        cv::applyColorMap(new_display, new_display, map);
     }
+
 
     cv::cvtColor(new_display, display_BGRA, cv::COLOR_BGR2BGRA);
 

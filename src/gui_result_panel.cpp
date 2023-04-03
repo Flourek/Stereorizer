@@ -91,6 +91,8 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
     BeginChild("Viewing", ImVec2(0.3 * width, 0));
     if( CollapsingHeader("Viewing Options", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent( 8.0f );
+        NewLine();
+
         opt.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
         opt.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
         ImGui::Checkbox("Live Refresh", &opt.live_refresh);
@@ -103,7 +105,8 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
         if ( InputDouble("##e", &opt.viewport_scale, 1.0f, 1.0f, format.c_str()) ){
             if ( opt.viewport_scale <= 0 )
                 opt.viewport_scale = 1;
-            opt.update_stereo |= true;
+            stereo.resizeAll(opt.viewport_scale);
+            opt.update_depth |= true;
         }
 
         Unindent( 8.0f );
@@ -115,6 +118,7 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
     BeginChild("Saving", ImVec2(0.7 * width, 0));
     if( CollapsingHeader("Saving", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent( 8.0f );
+        NewLine();
 
         BeginChild("Include", ImVec2(0.3 * width, 100));
             Checkbox("Side By Side", &opt.save_sbs    );
@@ -135,7 +139,7 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
 
                 if(opt.save_sbs){
                     cv::Mat sbs;
-                    cv::hconcat(stereo.left.mat, stereo.right.mat, sbs);
+                    cv::hconcat(stereo.resized_left, stereo.right.mat, sbs);
                     cv::imwrite(opt.output_path + "chuj_SBS_FLAT.jpg" , sbs);
                 }
 

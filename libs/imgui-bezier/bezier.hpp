@@ -498,7 +498,7 @@ namespace ImGui
         while (max < maxpoints && points[max].x >= 0) max++;
 
 
-        RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg, 1), true, style.FrameRounding);
+        RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg, 0.8), true, style.FrameRounding);
 
         float ht = bb.Max.y - bb.Min.y;
         float wd = bb.Max.x - bb.Min.x;
@@ -552,6 +552,7 @@ namespace ImGui
 
             if(IsMouseClicked(ImGuiMouseButton_Left)) {
                 if (sel == -1) {
+                    modified = 1;
 
                     if (max < maxpoints) {
                         max++;
@@ -567,7 +568,9 @@ namespace ImGui
 
             if(IsMouseClicked(ImGuiMouseButton_Right)) {
                 if (sel != -1 )
+
                     if ( &points[sel] != &points[0] && &points[sel] != &points[max - 1]){
+                        modified = 1;
 
                     int kill = sel;
 
@@ -580,19 +583,25 @@ namespace ImGui
             }
         }
 
+
+        // Grid
         ImU32 color = ImColor(0, 0, 0, 40);
-        int steps = 3;
-        for (i = 0; i < steps; i++)
-        {
+        int steps = 6;
+        for (int i = 0; i < steps; i++) {
             window->DrawList->AddLine(
                     ImVec2(bb.Min.x + (wd / steps) * (i + 1), bb.Min.y),
                     ImVec2(bb.Min.x + (wd / steps) * (i + 1), bb.Max.y),
                     GetColorU32(color));
+        }
+
+        steps = 3;
+        for (int i = 0; i < steps; ++i) {
             window->DrawList->AddLine(
                     ImVec2(bb.Min.x, bb.Min.y + (ht / steps) * (i + 1)),
                     ImVec2(bb.Max.x, bb.Min.y + (ht / steps) * (i + 1)),
                     GetColorU32(color));
         }
+
 
         // smooth curve
         enum { smoothness = 256 }; // the higher the smoother

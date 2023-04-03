@@ -11,6 +11,7 @@
 
 class Image {
 public:
+    cv::Mat original;
     cv::Mat mat;
     cv::Mat display_BGRA;
     GLuint texture;
@@ -21,6 +22,8 @@ public:
 
     Image(const std::string& path);
 
+    Image(const cv::Mat& input_mat );
+
     void changeImage(const std::string &new_path);
 
     void resize(float scale = -1);
@@ -30,6 +33,8 @@ public:
     void updateTexture();
 
     void convertToDisplay();
+
+    int getScaleSuggestion();
 
     static bool checkMismatch(const Image& a, const Image& b);
 

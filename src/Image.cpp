@@ -6,10 +6,14 @@
 #include "GL/glcorearb.h"
 
 Image::Image(const std::string &path) {
-    display_BGRA = cv::Mat(mat.rows, mat.cols, CV_8UC4);
     changeImage(path);
-    createTexture();
+    convertToDisplay();
+}
 
+Image::Image(const cv::Mat &input_mat) {
+    mat = input_mat.clone();
+    convertToDisplay();
+    createTexture();
 }
 
 
@@ -31,8 +35,14 @@ void Image::createTexture() {
 }
 
 void Image::convertToDisplay(){
-    cv::cvtColor(mat, display_BGRA, cv::COLOR_BGR2BGRA);
-};
+    display_BGRA = cv::Mat(mat.rows, mat.cols, CV_8UC4);
+
+    if(mat.channels() == 3)
+        cv::cvtColor(mat, display_BGRA, cv::COLOR_BGR2BGRA);
+    else if (mat.channels() == 1)
+        cv::cvtColor(mat, display_BGRA, cv::COLOR_GRAY2BGRA);
+}
+
 
 void Image::updateTexture() {
 
@@ -43,8 +53,15 @@ void Image::updateTexture() {
 
 
 void Image::resize(float scale) {
-    cv::resize(mat, display_BGRA, cv::Size(mat.cols / scale, mat.rows / scale));
+    cv::resize(original, mat, cv::Size(original.cols / scale, original.rows / scale));
     createTexture();
+}
+
+
+int Image::getScaleSuggestion(){
+    int scale = sqrt( mat.total() / 1000000 );
+    if (scale == 0) scale = 1;
+    return scale;
 }
 
 
@@ -54,25 +71,18 @@ void Image::changeImage(const std::string &new_path) {
     // Update the original image if it exists
     cv::Mat new_image = cv::imread(path, cv::IMREAD_COLOR);
 
-    if (!new_image.empty())
-        mat = new_image.clone();
-    else
-        std::cout << "imag empty: " << path << std::endl;
+    if (new_image.empty())
+        return;
+
+    original = new_image.clone();
+    resize(1);
 
     // Update aspect ratio
     aspect = (float) mat.rows / (float) mat.cols;
 
-
-    // Resize the input for performance reasons (1000x1000 image = 1)
-//    int scale = sqrt( new_image.total() / 1000000 );
-//    if (scale == 0) scale = 1;
-//    opt.viewport_scale = scale;
-
-
-//    resize(scale);
     createTexture();
-
 }
+
 
 // Returns true if sizes are the same
 bool Image::checkMismatch(const Image& a, const Image& b){

@@ -35,11 +35,8 @@ struct GuiSettings {
     bool save_mask          = false;
     bool save_stereo        = false;
 
-    float depth_contrast = 0.5f;
-    float depth_brigthness = 0.5f;
-    float depth_highlights = 0.5f;
-
     int depth_color_map     = 1;
+    bool inpainting_enable  = true;
     bool inpainting_glitch  = false;
 
     // Paths
@@ -104,7 +101,12 @@ void GuiFileDialog(const std::string& text, std::string& path);
 
 bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v_max);
 
-void RightAlignNextItem();
+void RightAlignNextItem(char const *text = "");
+
+void BeginRightAlign(char const *label, int item_count
+);
+
+void EndRightAlign();
 
 // Depth
 

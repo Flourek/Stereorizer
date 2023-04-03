@@ -24,6 +24,7 @@ void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
     BeginChild("Input File", ImVec2(target_width, 0));
     if( CollapsingHeader("Imput fil", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent(8.0f);
+        NewLine();
 
         GuiFileDialog("File:", left.path);
 
@@ -51,22 +52,33 @@ void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
         EndChild();
     }
 
-    if( CollapsingHeader("Inpainting", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed) ){
+    if( CollapsingHeader("Inpainting & Mask", ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed) ){
         Indent(8.0f);
+        NewLine();
 
-        opt.update_stereo |= RightAlignedSlider("Ciul", (float*) &opt.y, 0.0f, 10.0f);
-        opt.update_stereo |= RightAlignedSlider("Chuj", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
-        RightAlignNextItem();
+//        RightAlignNextItem("Mask blur");
+        BeginRightAlign("erf", 1);
+        SetNextItemWidth(GetContentRegionAvail().x);
+            ImGui::SliderFloat("##", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
+        EndRightAlign();
+//        opt.update_stereo |= RightAlignedSlider("Strength", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
+
+        NewLine();
+
+        RightAlignNextItem("Inpainting");
+        opt.update_stereo |= Checkbox("Enable", &opt.inpainting_enable);
+        SameLine(0, 10);
         opt.update_stereo |= Checkbox("Glitched", &opt.inpainting_glitch);
-        RightAlignNextItem();
-        opt.update_stereo |= Checkbox("MaskOpacity", &opt.mask_blur);
+
+
+//        opt.update_stereo |= RightAlignedSlider("Ciul", (float*) &opt.y, 0.0f, 10.0f);
         Unindent(8.0f);
         NewLine();
     }
 
     if( CollapsingHeader("Stereo", ImGuiTreeNodeFlags_DefaultOpen) ){
         Indent(8.0f);
-        SeparatorText("Deviation");
+        NewLine();
 
         opt.update_stereo |= SliderFloat("##Deviatione", &opt.deviation, 0.0f, 100.0f);
         SameLine();

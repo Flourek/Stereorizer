@@ -101,7 +101,7 @@ def start(input_path, output_path, model_path, model_type="dpt_beit_large_512", 
         output_path, os.path.splitext(os.path.basename(input_path))[0] + '-' + model_type
     )
     print(filename)
-    utils.write_depth(filename, prediction, grayscale, bits=2)
+    utils.write_depth(filename, prediction, True, bits=2)
 
 
 

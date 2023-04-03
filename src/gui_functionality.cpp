@@ -118,18 +118,19 @@ void TextCentered(const std::string& text) {
 
 void GuiFileDialog(const std::string& text, std::string& path){
     float text_width = ImGui::CalcTextSize(text.c_str()).x;
-    ImGui::SetCursorPosX(-text_width);
-    RightAlignNextItem();
+//    ImGui::SetCursorPosX(-text_width);
+//    RightAlignNextItem();
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", text.c_str());
     ImGui::SameLine();
+    ImGui::SetNextItemWidth(357);
     ImGui::InputText("##output_path", &path, ImGuiInputTextFlags_ReadOnly);
     ImGui::SameLine();
     ImGui::Button(ICON_FA_FOLDER_OPEN);
 }
 
 bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v_max){
-    float text_child_width = ImGui::GetWindowSize().x / 5;
+    float text_child_width = ImGui::GetWindowSize().x / 2;
     float text_width = ImGui::CalcTextSize(label.c_str()).x;
     float height = ImGui::GetFrameHeight();
 
@@ -146,13 +147,33 @@ bool RightAlignedSlider(const std::string& label, float *x, float v_min, float v
 }
 
 
-void RightAlignNextItem(){
-    float width = ImGui::GetWindowSize().x / 5;
+void RightAlignNextItem(char const *text) {
+    float width = ImGui::GetWindowSize().x / 2;
+    float offset = 70;
+
     ImGui::NewLine();
-    ImGui::SameLine(0, width + 8);
+    float text_width = ImGui::CalcTextSize(text).x;
+    ImGui::SameLine(0, width - text_width - offset);
+    ImGui::AlignTextToFramePadding();
+    ImGui::Text("%s", text);
+    ImGui::SameLine();
 }
 
 
+void BeginRightAlign(char const *label, int item_count) {
+    float child_width = ImGui::GetWindowSize().x / 2;
+    float child_height = item_count * ImGui::GetFrameHeightWithSpacing();
+
+    float padding_right = 60.0f;
+    float offset = 70;
+    ImGui::NewLine();
+    ImGui::SameLine(0, child_width - offset);
+    ImGui::BeginChild(label, ImVec2(child_width + offset - padding_right, child_height));
+}
+
+void EndRightAlign(){
+    ImGui::EndChild();
+}
 
 
 
