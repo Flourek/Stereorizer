@@ -89,7 +89,7 @@ void GuiDepthPanel(class Depth &depth, GuiSettings &opt, float width);
 
 void GuiImagePanel(class Image& left, GuiSettings &opt, float target_width);
 
-void GuiResultPanel(class Stereo &stereo, GuiSettings &opt, float width);
+void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, float width);
 
 void ImageCenteredWithAspect(GLuint &texture, int target_width, float aspect);
 

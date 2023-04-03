@@ -25,6 +25,8 @@ void Image::createTexture() {
     glBindTexture( GL_TEXTURE_2D, texture );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter );
     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter );
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
     glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
 
     GLint internal_format = GL_RGBA;

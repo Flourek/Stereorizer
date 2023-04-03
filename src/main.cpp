@@ -82,9 +82,12 @@ int main( int argc, char* argv[] ) {
 
     GuiSettings opt;
 
-    Image left("../img/f.jpg");
-    Depth depth("../img/f_DEPTH.png");
-    Image right("../img/f.jpg");
+    Image left("../img/hg.jpg");
+    Depth depth("../img/hg.png");
+    Image right("../img/hg.jpg");
+    Image zoom("../img/hg.jpg");
+    zoom.gl_filter = GL_NEAREST;
+    zoom.createTexture();
 
     Stereo stereo = Stereo(left, depth, right, opt.deviation);
 
@@ -96,7 +99,7 @@ int main( int argc, char* argv[] ) {
 
     std::string output_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\";
     std::string filename = "chuj.jpg";
-    *input_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\f.jpg";
+    *input_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\hg.jpg";
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
 
@@ -123,6 +126,8 @@ int main( int argc, char* argv[] ) {
             right.changeImage(*input_path);
             opt.viewport_scale = left.getScaleSuggestion();
             stereo.resizeAll(opt.viewport_scale);
+            zoom.mat = right.mat;
+            zoom.createTexture();
 
             opt.update_input = false;
             opt.update_depth = true;
@@ -158,6 +163,9 @@ int main( int argc, char* argv[] ) {
             if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
                 stereo.run(opt);
 
+                zoom.mat = right.mat;
+                zoom.createTexture();
+
                 opt.force_update = false;
                 opt.update_stereo = false;
             }
@@ -180,7 +188,7 @@ int main( int argc, char* argv[] ) {
             GuiDepthPanel(depth, opt, SmallImageSize);
 
             SameLine(0, 0.04*vw);
-            GuiResultPanel(stereo, opt, ResultImageSize);
+            GuiResultPanel(stereo, zoom, opt, ResultImageSize);
 
             ImGui::End();
         }

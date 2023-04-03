@@ -1,15 +1,17 @@
 //
 // Created by Flourek on 21/03/2023.
 //
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "header.h"
 #include "Stereo.h"
 #include "../libs/IconsFontAwesome5.h"
 
 
-void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
+
+void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, float width) {
     using namespace ImGui;
     BeginGroup();
 
@@ -22,71 +24,92 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
         // Main image
     ImageCenteredWithAspect(stereo.right.texture, width, stereo.right.aspect);
 
-        ImGuiIO& io = ImGui::GetIO();
-        ImVec2 pos = ImGui::GetCursorScreenPos();
+
+
+
+
+
 
     // Tool tip with zoomed in view
-        ImGuiHoveredFlags hover_flags = ImGuiHoveredFlags_AllowWhenBlockedByActiveItem;
-        ImGuiHoveredFlags tooltip_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize;
+    ImGuiHoveredFlags hover_flags = ImGuiHoveredFlags_AllowWhenBlockedByActiveItem;
+    ImGuiHoveredFlags tooltip_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize;
 
-//        if (ImGui::IsItemHovered(hover_flags) || opt.zoom_window_stick ) {
-//
-//            ImVec2 cursor, window_pos;
-//            if (!opt.zoom_window_stick){
-//                cursor = io.MousePos;
-//                window_pos = cursor;
-//                window_pos.x = std::clamp(cursor.x, pos.x, pos.x + width - 110);
-//                window_pos.y += 30;
-//                SetNextWindowPos(window_pos);
-//            }
-//            SetNextWindowSize( ImVec2(130, 170) );
-//            Begin("foofee1", nullptr, tooltip_flags);
-//
-//                if (!opt.zoom_window_stick)
-//                    Text("Click to stick");
-//                else
-//                    Text("Click to unstick");
-//
-//                float size = 110;
-//                if (opt.zoom_window_stick)
-//                    cursor = opt.zoom_click_pos;
-//
-//                if (opt.zoom_level == 0) opt.zoom_level = 0.5;
-//
-//                //Image coordinates
-//                float x = cursor.x - pos.x - size/2/opt.zoom_level + 8;
-//                float y = cursor.y - pos.y - size/2/opt.zoom_level + 4 + width;
-//
-//                float w = width;
-//                float h = width * ( (float) result.rows / (float) result.cols);
-//
-//                // Normalize to [0,1]
-//                ImVec2 uv0 = ImVec2( x / w , y / h);
-//                ImVec2 uv1 = ImVec2( (x + size / opt.zoom_level) / w ,
-//                                     (y + size / opt.zoom_level) / h );
-//
-//                ImGui::Image(reinterpret_cast<void*>( static_cast<intptr_t>( zoom_texture ) ),
-//                             ImVec2(110, 110),
-//                             uv0, uv1);
-//                SetNextItemWidth(50);
-//                InputFloat("##Zoom", &opt.zoom_level, 0.0f, 0.0f, "x%.1f");
-//                SameLine();
-//                if ( Button(ICON_FA_SEARCH_PLUS) ) opt.zoom_level += 0.5f;
-//                SameLine();
-//                if ( Button(ICON_FA_SEARCH_MINUS) ) opt.zoom_level -= 0.5f;
-//
-//                if( !IsWindowHovered() &&  !IsAnyItemHovered() ){
-//                    if( ImGui::IsMouseClicked(ImGuiMouseButton_Left) ){
-//                        opt.zoom_window_stick ^= 1;
-//                        opt.zoom_click_pos = io.MousePos;
-//                    }
-//
-//                }
-//
-//            End();
+    if (ImGui::IsItemHovered(hover_flags) || opt.zoom_window_stick ) {
 
-//        }
+
+        ImVec2 cursor, popup_pos;
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImVec2 min =  ImGui::GetItemRectMin();
+        ImVec2 max = ImGui::GetItemRectMax();
+        int display_width = max.x - min.x;
+        int display_height = max.y - min.y;
+        int image_width = zoom.mat.cols;
+        int image_height = zoom.mat.rows;
+
+        if (!opt.zoom_window_stick){
+            cursor = io.MousePos;
+            popup_pos = cursor;
+            popup_pos.x = std::clamp(cursor.x, min.x, max.x - 110);
+            popup_pos.y += 30;
+            SetNextWindowPos(popup_pos);
+        }
+        SetNextWindowSize( ImVec2(130, 170) );
+        Begin("foofee1", nullptr, tooltip_flags);
+
+            if (!opt.zoom_window_stick)
+                Text("Click to stick");
+            else
+                Text("Click to unstick");
+
+            float size = 110;
+            if (opt.zoom_window_stick)
+                cursor = opt.zoom_click_pos;
+
+            if (opt.zoom_level == 0) opt.zoom_level = 1.0f;
+
+            // To image coordinates
+            float x = (cursor.x - min.x) / ( (float) display_width  / zoom.mat.cols );
+            float y = (cursor.y - min.y) / ( (float) display_height / zoom.mat.rows );
+
+            float margin = size/2 / opt.zoom_level / opt.viewport_scale;
+            // Center and zoom
+            x -= margin;
+            y -= margin;
+
+
+            // Normalize to [0,1] also zoom again idk
+            ImVec2 uv0 = ImVec2( x / image_width   ,
+                                 y / image_height  );
+
+            ImVec2 uv1 = ImVec2( (x + size / opt.zoom_level / opt.viewport_scale) / image_width  ,
+                                 (y + size / opt.zoom_level / opt.viewport_scale) / image_height );
+
+
+            ImGui::Image( (void*)(intptr_t) zoom.texture, ImVec2(110, 110), uv0, uv1);
+
+
+            SetNextItemWidth(50);
+            static int zoom_level = 1;
+            opt.zoom_level = pow(2, zoom_level);
+            InputFloat("##Zoom", &opt.zoom_level, 0.0f, 0.0f, "x%.1f");
+            SameLine();
+            if ( Button(ICON_FA_SEARCH_PLUS) ) zoom_level += 1;
+            SameLine();
+            if ( Button(ICON_FA_SEARCH_MINUS) ) zoom_level -= 1;
+
+            if( !IsWindowHovered() &&  !IsAnyItemHovered() ){
+                if( ImGui::IsMouseClicked(ImGuiMouseButton_Left) ){
+                    opt.zoom_window_stick ^= 1;
+                    opt.zoom_click_pos = io.MousePos;
+                }
+            }
+
+        End();
+
+    }
     EndChild();
+
 
     BeginChild("Viewing", ImVec2(0.3 * width, 0));
     if( CollapsingHeader("Viewing Options", ImGuiTreeNodeFlags_DefaultOpen) ){
@@ -161,4 +184,5 @@ void GuiResultPanel(Stereo &stereo, GuiSettings &opt, float width) {
     }
     EndChild();
     EndGroup();
+
 }

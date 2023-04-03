@@ -103,7 +103,7 @@ void ImageCenteredWithAspect(GLuint &texture, int target_width, float aspect) {
     ImGui::SetNextWindowPos( center_pos, 0, pivot);
 
     ImGui::BeginChild("LeftImageCenterer", display_size);
-    ImGui::Image( reinterpret_cast<void*>( static_cast<intptr_t>( texture ) ), display_size);
+        ImGui::Image( reinterpret_cast<void*>( static_cast<intptr_t>( texture ) ), display_size);
     ImGui::EndChild();
 
 }
