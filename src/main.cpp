@@ -182,7 +182,7 @@ int main( int argc, char* argv[] ) {
             Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
             Indent(16.0f);
-            GuiImagePanel(left, opt, SmallImageSize);
+            GuiImagePanel(left, stereo, opt, SmallImageSize);
 
             SameLine(0, 0.04*vw);
             GuiDepthPanel(depth, opt, SmallImageSize);

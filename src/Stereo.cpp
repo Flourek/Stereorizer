@@ -5,7 +5,8 @@
 #include "Stereo.h"
 #include <opencv2/opencv.hpp>
 #include "header.h"
-
+#include <iostream>
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -23,7 +24,7 @@ Stereo::Stereo(Image &left, Depth &depth, Image &right, float deviation)
 void Stereo::run(const GuiSettings& opt) {
     deviation = (opt.deviation * opt.deviation_multiplier) * (float) resized_left.cols / 500;
 
-    resized_mask = 0;
+    mask = 0;
     right.mat = 0;
 
 
@@ -31,7 +32,7 @@ void Stereo::run(const GuiSettings& opt) {
     right.mat = Stereo::ShiftPixels(resized_left, resized_depth, resized_mask, deviation );
 
     if(opt.inpainting_enable)
-        Inpaint(right.mat, resized_mask, deviation);
+        Inpaint(right.mat, mask, deviation);
 
     if(opt.mask_overlay)
         right.mat += maskPostProcess(opt);
@@ -45,28 +46,56 @@ void Stereo::run(const GuiSettings& opt) {
 void Stereo::resizeAll(int scale) {
     auto new_size = cv::Size( left.mat.cols /scale,  left.mat.rows / scale);
     cv::resize(left.mat,        resized_left,   new_size );
-    cv::resize(depth.float_mat, resized_depth,  new_size );
+    cv::resize(depth.mat,       resized_depth,  new_size );
     cv::resize(mask,            resized_mask,   new_size );
     cv::resize(right.mat,       right.mat,      new_size );
     right.createTexture();
 }
 
 
-cv::Mat Stereo::ShiftPixels(cv::Mat& left, cv::Mat& depth, cv::Mat& mask, float deviation){
+string type2str(int type) {
+    string r;
 
-    cv::Mat result(left.rows, left.cols, CV_8UC3);
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
 
-    depth.forEach<float>(
-        [&left, &deviation, &result, &mask] ( float &pixel, const int * position ){
+    switch ( depth ) {
+        case CV_8U:  r = "8U"; break;
+        case CV_8S:  r = "8S"; break;
+        case CV_16U: r = "16U"; break;
+        case CV_16S: r = "16S"; break;
+        case CV_32S: r = "32S"; break;
+        case CV_32F: r = "32F"; break;
+        case CV_64F: r = "64F"; break;
+        default:     r = "User"; break;
+    }
+
+    r += "C";
+    r += (chans+'0');
+
+    return r;
+}
+
+cv::Mat Stereo::ShiftPixels(cv::Mat& leftE, cv::Mat& depthE, cv::Mat& maskE, float deviation){
+
+    #define M_PI 3.14159265358979323846
+    cv::Mat result(leftE.rows, leftE.cols, CV_8UC3);
+    result = 0;
+
+    depth.mat.forEach<ushort>(
+        [this, &result] ( ushort &pixel, const int * position ){
 
             int row = position[0];
             int col = position[1];
 
-            int dis = pixel * deviation;
-            int col_r = col - dis;
+            float dis = 256 - (pixel / 256) + dampener;
 
-            if (col_r >= 0 && col_r < left.cols) {
-                result.at<cv::Vec3b>(row, col_r) = left.at<cv::Vec3b>(row, col);
+            double view_angle = 2.0 * atan(ipd / (2.0 * dis));
+            double disparity = (view_angle * 180.0 / M_PI) * (focal_length / pixel_size);
+            int col_r = col - disparity;
+
+            if (col_r >= 0 && col_r < left.mat.cols) {
+                result.at<cv::Vec3b>(row, col_r) = left.mat.at<cv::Vec3b>(row, col);
                 mask.at<uchar>(row, col_r) = 255;
             }
         }

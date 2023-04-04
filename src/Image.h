@@ -7,7 +7,6 @@
 
 #include <opencv2/opencv.hpp>
 #include "GLFW/glfw3.h"
-#include "header.h"
 
 class Image {
 public:

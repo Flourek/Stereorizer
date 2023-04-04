@@ -8,7 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include "GLFW/glfw3.h"
 #include "imgui.h"
-#include "Image.h"
+
 
 struct GuiSettings {
     // Logic flags
@@ -87,7 +87,7 @@ cv::Mat updateStereo(class Stereo &stereo, GuiSettings &opt);
 
 void GuiDepthPanel(class Depth &depth, GuiSettings &opt, float width);
 
-void GuiImagePanel(class Image& left, GuiSettings &opt, float target_width);
+void GuiImagePanel(class Image &left, Stereo &stereo, GuiSettings &opt, float target_width);
 
 void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, float width);
 

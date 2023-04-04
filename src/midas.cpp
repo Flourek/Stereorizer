@@ -4,6 +4,7 @@
 #include "opencv2/opencv.hpp"
 #include "iostream"
 #include "header.h"
+#include "Image.h"
 #include "Depth.h"
 
 void importModules() {

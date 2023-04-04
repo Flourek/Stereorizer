@@ -8,9 +8,10 @@
 #include "header.h"
 #include "Image.h"
 #include "../libs/IconsFontAwesome5.h"
+#include "Stereo.h"
 
 
-void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
+void GuiImagePanel(Image &left, Stereo &stereo, GuiSettings &opt, float target_width) {
 
     using namespace ImGui;
 
@@ -91,6 +92,12 @@ void GuiImagePanel(Image& left, GuiSettings &opt, float target_width) {
         try{
             opt.deviation_multiplier = std::stof(chuj);
         } catch (std::exception& e) {}
+
+        opt.update_stereo |= ImGui::SliderFloat("damp", &stereo.dampener,     1.0f, 1000.0f);
+        opt.update_stereo |= ImGui::SliderFloat("ipde",  &stereo.ipd,          1.0f, 10.0f);
+        opt.update_stereo |= ImGui::SliderFloat("foca", &stereo.focal_length, 1.0f, 100.0f);
+        opt.update_stereo |= ImGui::SliderFloat("size", &stereo.pixel_size,   10.0f, 100.0f);
+
 
         NewLine();
         opt.force_update |= Button("Stereoify");

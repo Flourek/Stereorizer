@@ -1,9 +1,10 @@
 //
 // Created by Flourek on 30/03/2023.
 //
-
 #ifndef STEREORIZER_DEPTH_H
 #define STEREORIZER_DEPTH_H
+#include <opencv2/opencv.hpp>
+#include "imgui.h"
 #include "Image.h"
 
 class Depth : public Image {

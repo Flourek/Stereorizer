@@ -8,6 +8,7 @@
 #include <opencv2/opencv.hpp>
 #include "Image.h"
 #include "Depth.h"
+#include "header.h"
 
 class Stereo {
 public:
@@ -21,6 +22,10 @@ public:
     cv::Mat resized_depth;
     cv::Mat resized_mask;
 
+    float ipd = 6.5;
+    float focal_length = 18.0;
+    float pixel_size = 10;
+    float dampener = 100.0f;
 
     Stereo(Image &left, Depth &depth, Image &right, float deviation);
 
@@ -28,11 +33,14 @@ public:
 
     cv::Mat maskPostProcess(const GuiSettings &opt);
 
-    static cv::Mat ShiftPixels(cv::Mat& left, cv::Mat& depth, cv::Mat& mask, float deviation);
+    double calcBinocularDisparity(double distance);
+
+    cv::Mat ShiftPixels(cv::Mat& leftE, cv::Mat& depthE, cv::Mat& maskE, float deviation);
 
     static void Inpaint(cv::Mat& right, cv::Mat& mask, float deviation);
 
     void resizeAll(int scale);
+
 
 
 };
