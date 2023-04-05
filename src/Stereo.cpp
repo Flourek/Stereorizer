@@ -27,9 +27,19 @@ void Stereo::run(const GuiSettings& opt) {
     mask = 0;
     right.mat = 0;
 
+    cv::Size target_size = left.mat.size();
+    if(right.mat.size() != target_size)
+        cv::resize(right.mat, right.mat, target_size);
+
+    if(depth.mat.size() != target_size)
+        cv::resize(depth.mat, depth.mat, target_size);
+
+    if(mask.size() != target_size)
+        cv::resize(mask, mask, target_size);
+
 
     cv::resize(resized_depth, resized_depth, resized_left.size());
-    right.mat = Stereo::ShiftPixels(resized_left, resized_depth, resized_mask, deviation );
+    right.mat = Stereo::ShiftPixels();
 
     if(opt.inpainting_enable)
         Inpaint(right.mat, mask, deviation);
@@ -53,33 +63,12 @@ void Stereo::resizeAll(int scale) {
 }
 
 
-string type2str(int type) {
-    string r;
 
-    uchar depth = type & CV_MAT_DEPTH_MASK;
-    uchar chans = 1 + (type >> CV_CN_SHIFT);
 
-    switch ( depth ) {
-        case CV_8U:  r = "8U"; break;
-        case CV_8S:  r = "8S"; break;
-        case CV_16U: r = "16U"; break;
-        case CV_16S: r = "16S"; break;
-        case CV_32S: r = "32S"; break;
-        case CV_32F: r = "32F"; break;
-        case CV_64F: r = "64F"; break;
-        default:     r = "User"; break;
-    }
-
-    r += "C";
-    r += (chans+'0');
-
-    return r;
-}
-
-cv::Mat Stereo::ShiftPixels(cv::Mat& leftE, cv::Mat& depthE, cv::Mat& maskE, float deviation){
+cv::Mat Stereo::ShiftPixels() {
 
     #define M_PI 3.14159265358979323846
-    cv::Mat result(leftE.rows, leftE.cols, CV_8UC3);
+    cv::Mat result(left.mat.rows, left.mat.cols, CV_8UC3);
     result = 0;
 
     depth.mat.forEach<ushort>(

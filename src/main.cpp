@@ -1,5 +1,5 @@
-
 #include <iostream>
+
 #include <opencv2/opencv.hpp>
 
 #include "GL/gl3w.h"
@@ -24,7 +24,8 @@
 #define SmallImageSize 0.24*vw
 #define ResultImageSize 0.4*vw
 
-
+#include "future"
+#include "thread"
 
 
 int main( int argc, char* argv[] ) {
@@ -52,6 +53,8 @@ int main( int argc, char* argv[] ) {
     ImGui_ImplOpenGL3_Init( "#version 330" );
 
     Py_Initialize();
+    PyInterpreterState* interp = PyInterpreterState_Head();
+
 
 
     // ImGui
@@ -106,6 +109,7 @@ int main( int argc, char* argv[] ) {
     cv::Mat depth_float;
 
 
+
     while(!glfwWindowShouldClose(window)){
 
         glfwPollEvents();
@@ -134,23 +138,29 @@ int main( int argc, char* argv[] ) {
             opt.update_stereo = opt.live_refresh;
         }
 
-        if (opt.midas_run) {
-            ZoneScopedN("Midas");
+        if(opt.midas_run){
 
-            generateDepthMap(*input_path, opt.model_path, depth, opt);
-            depth.createTexture();
-            opt.update_depth = true;
+            std::thread t;
+
+            t = std::thread([&]() {
+                generateDepthMap(*input_path, opt.model_path, depth, opt, interp);
+                opt.update_depth = true;
+                std::cout << "DONE XD"<< std::endl;
+            });
+
+            t.detach();
+
             opt.midas_run = false;
         }
 
         if (opt.update_depth) {
             ZoneScopedN("Depth");
-            std::cout << depth.mat.cols << std::endl;
-            std::cout << left.mat.cols << std::endl;
-            stereo.resized_depth = depth.float_mat;
-            depth.convertToFloat();
             depth.convertToDisplay();
-            depth.updateTexture();
+            depth.createTexture();
+
+//            depth.convertToFloat();
+//            depth.convertToDisplay();
+//            depth.updateTexture();
             opt.update_stereo = opt.live_refresh;
             opt.update_depth = false;
         }
@@ -200,11 +210,12 @@ int main( int argc, char* argv[] ) {
         FrameMark;
     }
 
-    Py_Finalize();
     ImGui_ImplGlfw_Shutdown();
     ImGui_ImplOpenGL3_Shutdown();
     ImGui::DestroyContext();
     glfwTerminate();
+    Py_Finalize();
+//    t.join();
 
     return 0;
 }

@@ -10,6 +10,7 @@ Image::Image(const std::string &path) {
     convertToDisplay();
 }
 
+
 Image::Image(const cv::Mat &input_mat) {
     mat = input_mat.clone();
     convertToDisplay();
@@ -18,7 +19,6 @@ Image::Image(const cv::Mat &input_mat) {
 
 
 void Image::createTexture() {
-    convertToDisplay();
 
     // Generate the texture
     glGenTextures( 1, &texture );
@@ -35,6 +35,7 @@ void Image::createTexture() {
     glTexImage2D( GL_TEXTURE_2D, 0, internal_format, display_BGRA.cols, display_BGRA.rows, 0, format, GL_UNSIGNED_BYTE, display_BGRA.data );
 
 }
+
 
 void Image::convertToDisplay(){
     display_BGRA = cv::Mat(mat.rows, mat.cols, CV_8UC4);
@@ -82,6 +83,7 @@ void Image::changeImage(const std::string &new_path) {
     // Update aspect ratio
     aspect = (float) mat.rows / (float) mat.cols;
 
+    convertToDisplay();
     createTexture();
 }
 

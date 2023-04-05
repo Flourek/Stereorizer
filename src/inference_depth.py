@@ -3,6 +3,7 @@
 
 def run(input_path, model_path):
     import time
+    import torch
     start_time = time.time()
 
     torch.backends.cudnn.enabled = True

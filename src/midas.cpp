@@ -17,16 +17,23 @@ void importModules() {
 
 }
 
-int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt) {
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt,
+                     PyInterpreterState *interp) {
 
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);
     result_path = result_path.substr(0, result_path.find_last_of("."));
     result_path = "./output/" + result_path + "-dpt_beit_large_512.png";
 
-    // Skip generating if file already exists
+
+
+//     Skip generating if file already exists
     std::ifstream infile(result_path);
     if ( !infile.good() ){
+        PyThreadState* tstate = PyThreadState_New(interp);
+        PyThreadState_Swap(tstate);
+
+        std::cout << "Generating depth map" << std::endl;
 
         if(opt.midas_first_execution){
             importModules();
@@ -57,7 +64,10 @@ int generateDepthMap(std::string input_path, std::string model_path, Depth &dept
         fclose(fp);
         delete[] wargv;
         wargv = nullptr;
+
     }
+
+    std::cout << infile.good() << std::endl;
 
     depth = Depth(result_path);
 

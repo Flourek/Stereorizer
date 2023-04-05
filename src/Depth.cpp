@@ -15,7 +15,7 @@ Depth::Depth(const std::string &path) : Image(path) {
     ImVec2 points[2] = {ImVec2(0,0), ImVec2(1,1)};
     adjust(points);
 
-    convertToFloat();
+//    convertToFloat();
     convertToDisplay();
     updateTexture();
 }
@@ -45,6 +45,7 @@ void Depth::resize(int scale) {
 void Depth::adjust(ImVec2 points[]) {
 
     mat = original.clone();
+
     ushort lutValues[UINT16_MAX + 1];
     for (int i = 0; i < UINT16_MAX; ++i) {
         float x = (float) i / UINT16_MAX;
@@ -66,36 +67,34 @@ void Depth::adjust(ImVec2 points[]) {
         }
     );
 
-
-//
-//    float contrast      = opt.depth_contrast;
-//    float brightness    = opt.depth_brigthness;
-//    float highlights    = opt.depth_highlights;
-//    contrast += 0.5f;
-//    brightness -= 0.5f;
-//    highlights -= 0.5f;
-//
-//    contrast = pow(contrast, 3);
-//    brightness *= 256;
-//
-//    typedef cv::Vec3b Pixel;
-//    mat *= contrast;
-//    mat += brightness;
-////    for( int y = 0; y < mat.rows; y++ ) {
-////        for( int x = 0; x < mat.cols; x++ ) {
-////            mat.at<Pixel>(y,x) =  cv::saturate_cast<Pixel>( contrast * mat.at<Pixel>(y, x)  );
-////        }
-////    }
-//
-//    if (opt.depth_invert)
-//        cv::bitwise_not(mat, mat);
-//
-
 }
 
+void type2str(const cv::Mat& mat) {
+    int type = mat.type();
+    std::string r;
+
+    uchar depth = type & CV_MAT_DEPTH_MASK;
+    uchar chans = 1 + (type >> CV_CN_SHIFT);
+
+    switch ( depth ) {
+        case CV_8U:  r = "8U"; break;
+        case CV_8S:  r = "8S"; break;
+        case CV_16U: r = "16U"; break;
+        case CV_16S: r = "16S"; break;
+        case CV_32S: r = "32S"; break;
+        case CV_32F: r = "32F"; break;
+        case CV_64F: r = "64F"; break;
+        default:     r = "User"; break;
+    }
+
+    r += "C";
+    r += (chans+'0');
+
+    std::cout << r << std::endl;
+}
 
 void Depth::convertToDisplay() {
-
+    type2str(mat);
     cv::Mat new_display = mat.clone();
     new_display /= 255;
     new_display.convertTo(new_display, CV_8UC3);

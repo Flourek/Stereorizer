@@ -8,6 +8,8 @@
 #include <opencv2/opencv.hpp>
 #include "GLFW/glfw3.h"
 #include "imgui.h"
+#include "Depth.h"
+#include "Python.h"
 
 
 struct GuiSettings {
@@ -110,13 +112,17 @@ void EndRightAlign();
 
 // Depth
 
-int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt);
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt,
+                     PyInterpreterState *interp);
 
 void importModules();
 
 bool checkSizeMismatch(const cv::Mat& image, const cv::Mat& depth);
 
 cv::Mat maskPostProcess(const cv::Mat &mask, const GuiSettings &opt);
+
+
+
 
 
 #endif //STEREOREO_HEADER_H

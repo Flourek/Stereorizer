@@ -35,7 +35,7 @@ public:
 
     double calcBinocularDisparity(double distance);
 
-    cv::Mat ShiftPixels(cv::Mat& leftE, cv::Mat& depthE, cv::Mat& maskE, float deviation);
+    cv::Mat ShiftPixels();
 
     static void Inpaint(cv::Mat& right, cv::Mat& mask, float deviation);
 
