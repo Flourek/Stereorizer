@@ -8,7 +8,6 @@
 
 Depth::Depth(const std::string &path) : Image(path) {
     mat = cv::imread(path, CV_16UC1);
-    resize(1);
     original = mat.clone();
 
     // Initialize lut_preview
@@ -35,16 +34,12 @@ void Depth::convertToFloat() {
 
 }
 
-
-void Depth::resize(int scale) {
-    cv::resize(mat, mat, cv::Size( mat.cols / scale,  mat.rows / scale));
-    createTexture();
-}
-
-
 void Depth::adjust(ImVec2 points[]) {
 
+    cv::Size old_size = mat.size();
     mat = original.clone();
+    cv::resize(mat, mat, old_size);
+    std::cout << old_size << std::endl;
 
     ushort lutValues[UINT16_MAX + 1];
     for (int i = 0; i < UINT16_MAX; ++i) {
@@ -94,7 +89,7 @@ void type2str(const cv::Mat& mat) {
 }
 
 void Depth::convertToDisplay() {
-    type2str(mat);
+//    type2str(mat);
     cv::Mat new_display = mat.clone();
     new_display /= 255;
     new_display.convertTo(new_display, CV_8UC3);

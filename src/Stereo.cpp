@@ -17,29 +17,21 @@ Stereo::Stereo(Image &left, Depth &depth, Image &right, float deviation)
     : left(left), depth(depth), right(right), deviation(deviation)
 {
     mask = cv::Mat(left.mat.rows, left.mat.cols, CV_8UC1);
-    resizeAll(1);
+    target_size = depth.original.size();
 }
 
 
 void Stereo::run(const GuiSettings& opt) {
-    deviation = (opt.deviation * opt.deviation_multiplier) * (float) resized_left.cols / 500;
 
     mask = 0;
     right.mat = 0;
 
-    cv::Size target_size = left.mat.size();
-    if(right.mat.size() != target_size)
-        cv::resize(right.mat, right.mat, target_size);
+    // Resize inputs so that they all match
+    resizeAll(opt.viewport_scale);
 
-    if(depth.mat.size() != target_size)
-        cv::resize(depth.mat, depth.mat, target_size);
+    deviation = (opt.deviation * opt.deviation_multiplier) * (float) target_size.width / 500;
 
-    if(mask.size() != target_size)
-        cv::resize(mask, mask, target_size);
-
-
-    cv::resize(resized_depth, resized_depth, resized_left.size());
-    right.mat = Stereo::ShiftPixels();
+    ShiftPixels();
 
     if(opt.inpainting_enable)
         Inpaint(right.mat, mask, deviation);
@@ -53,26 +45,42 @@ void Stereo::run(const GuiSettings& opt) {
 }
 
 
+// Set to -1 to match sizes
 void Stereo::resizeAll(int scale) {
-    auto new_size = cv::Size( left.mat.cols /scale,  left.mat.rows / scale);
-    cv::resize(left.mat,        resized_left,   new_size );
-    cv::resize(depth.mat,       resized_depth,  new_size );
-    cv::resize(mask,            resized_mask,   new_size );
-    cv::resize(right.mat,       right.mat,      new_size );
-    right.createTexture();
+
+    target_size = cv::Size( depth.original.cols / scale, depth.original.rows / scale  );
+    std::cout << target_size << std::endl;
+
+    if(depth.mat.size() != target_size){
+        cv::resize(depth.original, depth.mat, target_size);
+        depth.convertToDisplay();
+        depth.createTexture();
+    }
+
+    if(left.mat.size() != target_size)
+        cv::resize(left.original, left.mat, target_size);
+
+    if(right.mat.size() != target_size){
+        cv::resize(right.original, right.mat, target_size);
+        right.convertToDisplay();
+        right.createTexture();
+    }
+
+    if(mask.size() != target_size)
+        cv::resize(mask, mask, target_size);
+
+
 }
 
 
 
 
-cv::Mat Stereo::ShiftPixels() {
+void Stereo::ShiftPixels() {
 
     #define M_PI 3.14159265358979323846
-    cv::Mat result(left.mat.rows, left.mat.cols, CV_8UC3);
-    result = 0;
 
     depth.mat.forEach<ushort>(
-        [this, &result] ( ushort &pixel, const int * position ){
+        [this] ( ushort &pixel, const int * position ){
 
             int row = position[0];
             int col = position[1];
@@ -84,13 +92,12 @@ cv::Mat Stereo::ShiftPixels() {
             int col_r = col - disparity;
 
             if (col_r >= 0 && col_r < left.mat.cols) {
-                result.at<cv::Vec3b>(row, col_r) = left.mat.at<cv::Vec3b>(row, col);
+                right.mat.at<cv::Vec3b>(row, col_r) = left.mat.at<cv::Vec3b>(row, col);
                 mask.at<uchar>(row, col_r) = 255;
             }
         }
     );
 
-    return result.clone();
 }
 
 
@@ -128,7 +135,7 @@ void Stereo::Inpaint(cv::Mat& right, cv::Mat& mask, float deviation){
 
 
 cv::Mat Stereo::maskPostProcess(const GuiSettings &opt) {
-    cv::Mat blurred, res = resized_mask.clone();
+    cv::Mat blurred, res = mask.clone();
 
     if(res.channels() == 3)
         cvtColor(res, res, cv::COLOR_BGR2GRAY);

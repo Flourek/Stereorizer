@@ -123,12 +123,20 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
         NewLine();
         Text("Viewport scale:");
 
-        std::string format = opt.viewport_scale == 1 ? "1" : "1/%.0f";
 
-        if ( InputDouble("##e", &opt.viewport_scale, 1.0f, 1.0f, format.c_str()) ){
-            if ( opt.viewport_scale <= 0 )
-                opt.viewport_scale = 1;
+        static double scale = 0;
+        std::string format = opt.viewport_scale == 1 ? "1" : "1/" + std::to_string((int) opt.viewport_scale);
+
+        if ( InputDouble("##e", &scale, 1.0f, 1.0f, format.c_str() )){
+            if ( scale <= 0 ) scale = 0;
+            opt.viewport_scale = pow(2, scale);
+
             stereo.resizeAll(opt.viewport_scale);
+
+            stereo.right.convertToDisplay();
+            stereo.right.createTexture();
+            stereo.depth.convertToDisplay();
+            stereo.depth.createTexture();
             opt.update_depth |= true;
         }
 
@@ -162,7 +170,7 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
 
                 if(opt.save_sbs){
                     cv::Mat sbs;
-                    cv::hconcat(stereo.resized_left, stereo.right.mat, sbs);
+                    cv::hconcat(stereo.left.mat, stereo.right.mat, sbs);
                     cv::imwrite(opt.output_path + "chuj_SBS_FLAT.jpg" , sbs);
                 }
 

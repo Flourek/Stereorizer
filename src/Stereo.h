@@ -17,10 +17,7 @@ public:
     class Depth& depth;
     class Image& right;
     cv::Mat mask;
-
-    cv::Mat resized_left;
-    cv::Mat resized_depth;
-    cv::Mat resized_mask;
+    cv::Size target_size;
 
     float ipd = 6.5;
     float focal_length = 18.0;
@@ -35,11 +32,11 @@ public:
 
     double calcBinocularDisparity(double distance);
 
-    cv::Mat ShiftPixels();
+    void ShiftPixels();
 
     static void Inpaint(cv::Mat& right, cv::Mat& mask, float deviation);
 
-    void resizeAll(int scale);
+    void resizeAll(int scale = 1);
 
 
 

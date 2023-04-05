@@ -85,6 +85,7 @@ void Image::changeImage(const std::string &new_path) {
 
     convertToDisplay();
     createTexture();
+
 }
 
 

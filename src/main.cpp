@@ -127,9 +127,11 @@ int main( int argc, char* argv[] ) {
             ZoneScopedN("Change INput");
 
             left.changeImage(*input_path);
-            right.changeImage(*input_path);
+//            right.changeImage(*input_path);
+            depth.convertToDisplay();
+            depth.createTexture();
+
             opt.viewport_scale = left.getScaleSuggestion();
-            stereo.resizeAll(opt.viewport_scale);
             zoom.mat = right.mat;
             zoom.createTexture();
 
@@ -146,6 +148,8 @@ int main( int argc, char* argv[] ) {
                 generateDepthMap(*input_path, opt.model_path, depth, opt, interp);
                 opt.update_depth = true;
                 std::cout << "DONE XD"<< std::endl;
+                depth.convertToDisplay();
+                depth.createTexture();
             });
 
             t.detach();
@@ -156,16 +160,15 @@ int main( int argc, char* argv[] ) {
         if (opt.update_depth) {
             ZoneScopedN("Depth");
             depth.convertToDisplay();
-            depth.createTexture();
+            depth.updateTexture();
 
 //            depth.convertToFloat();
 //            depth.convertToDisplay();
-//            depth.updateTexture();
             opt.update_stereo = opt.live_refresh;
             opt.update_depth = false;
         }
 
-//        opt.size_mismatch = ( left.original.size != depth.original.size );
+        opt.size_mismatch = ( left.original.size != depth.original.size );
 
         if (!opt.size_mismatch){
             ZoneScopedN("Stereo");
@@ -173,15 +176,13 @@ int main( int argc, char* argv[] ) {
             if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
                 stereo.run(opt);
 
-                zoom.mat = right.mat;
-                zoom.createTexture();
+//                zoom.mat = right.mat;
+//                zoom.createTexture();
 
                 opt.force_update = false;
                 opt.update_stereo = false;
             }
         }
-
-
 
         using namespace ImGui; {
             static int counter = 0;
