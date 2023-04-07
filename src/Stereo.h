@@ -21,8 +21,10 @@ public:
 
     float ipd = 6.5;
     float focal_length = 18.0;
-    float pixel_size = 10;
-    float dampener = 100.0f;
+    float pixel_size = 0.17;
+    float dampener = 1.0f;
+    int near_distance = 100;
+    int far_distance = 1000;
 
     Stereo(Image &left, Depth &depth, Image &right, float deviation);
 
@@ -32,7 +34,7 @@ public:
 
     double calcBinocularDisparity(double distance);
 
-    void ShiftPixels();
+    void ShiftPixels(const GuiSettings &opt);
 
     static void Inpaint(cv::Mat& right, cv::Mat& mask, float deviation);
 

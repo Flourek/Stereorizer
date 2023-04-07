@@ -29,15 +29,24 @@ void Stereo::run(const GuiSettings& opt) {
     // Resize inputs so that they all match
     resizeAll(opt.viewport_scale);
 
-    deviation = (opt.deviation * opt.deviation_multiplier) * (float) target_size.width / 500;
+//    deviation = (opt.deviation * opt.deviation_multiplier) * (float) target_size.width / 500;
 
-    ShiftPixels();
+    ShiftPixels(opt);
 
     if(opt.inpainting_enable)
-        Inpaint(right.mat, mask, deviation);
+        Inpaint(right.mat, mask, opt.deviation);
 
     if(opt.mask_overlay)
         right.mat += maskPostProcess(opt);
+
+    Vec3b w = right.mat.at<Vec3b>(1, 1);
+    Vec3b b = right.mat.at<Vec3b>(1, 2);
+    std::cout << w << " " << b << " " << w - b << std::endl;
+
+
+    cv::Mat test(mask.rows, mask.cols, CV_8UC3);
+    test = 0;
+
 
 
     right.convertToDisplay();
@@ -49,7 +58,6 @@ void Stereo::run(const GuiSettings& opt) {
 void Stereo::resizeAll(int scale) {
 
     target_size = cv::Size( depth.original.cols / scale, depth.original.rows / scale  );
-    std::cout << target_size << std::endl;
 
     if(depth.mat.size() != target_size){
         cv::resize(depth.original, depth.mat, target_size);
@@ -70,33 +78,93 @@ void Stereo::resizeAll(int scale) {
         cv::resize(mask, mask, target_size);
 
 
+
+
+
 }
 
 
 
 
-void Stereo::ShiftPixels() {
+void Stereo::ShiftPixels(const GuiSettings &opt) {
 
     #define M_PI 3.14159265358979323846
 
+    // Normalizing the range of depth pixel values to user defined distance range
+    float distances[UINT16_MAX + 1];
+    float step = (float) (far_distance - near_distance) / UINT16_MAX;
+    for (int i = 0; i < UINT16_MAX + 1; ++i) {
+        distances[i] = near_distance + step * i;
+    }
+
+    cv::Mat test(mask.rows, mask.cols, CV_8UC3);
+    test = 0;
+
+    if(pixel_size == 0) pixel_size = 0.00001;
+
+    int prev_col_r = 0;
+
     depth.mat.forEach<ushort>(
-        [this] ( ushort &pixel, const int * position ){
+        [this, &distances, &test, &opt, &prev_col_r] ( ushort &pixel, const int * position ){
 
             int row = position[0];
             int col = position[1];
 
-            float dis = 256 - (pixel / 256) + dampener;
+            float dis = distances[UINT16_MAX  - pixel];
 
             double view_angle = 2.0 * atan(ipd / (2.0 * dis));
             double disparity = (view_angle * 180.0 / M_PI) * (focal_length / pixel_size);
             int col_r = col - disparity;
 
             if (col_r >= 0 && col_r < left.mat.cols) {
-                right.mat.at<cv::Vec3b>(row, col_r) = left.mat.at<cv::Vec3b>(row, col);
-                mask.at<uchar>(row, col_r) = 255;
+
+                prev_col_r = col_r;
+
+                for (int i = col_r; i <= col_r + opt.x; ++i) {
+
+                    right.mat.at<cv::Vec3b>(row, i) = left.mat.at<cv::Vec3b>(row, col);
+                    mask.at<uchar>(row, col_r) = 255;
+
+                }
+
+
+//                if( pixel - depth.mat.at<ushort>(row, col_r) > (opt.x * UINT16_MAX/100)  )
+//                    test.at<cv::Vec3b>(row, col_r) = Vec3b(255, 255, 255);
             }
         }
     );
+//
+//    cv::Mat res(mask.rows, mask.cols, CV_8UC3);
+//    cv::copyTo(right.mat, res, test);
+//    right.mat = res;
+
+//    for (int row = 0; row < mask.rows; ++row) {
+//        for (int col = 0; col < mask.cols; ++col) {
+//
+//            Vec3b lefte = right.mat.at<Vec3b>(row, col - 1);
+//            Vec3b righte = right.mat.at<Vec3b>(row, col + 1);
+//
+//            Vec3b dif = lefte - righte;
+//            int threshold = opt.y;
+//
+//            bool paint = true;
+//            for (int i = 0; i < 2; ++i) {
+//                if ( abs(dif[i]) > threshold )
+//                    break;
+//                paint = false;
+//            }
+//
+//            if (paint)
+//                mask.at<uchar>(row, col) = 0;
+//        }
+//    }
+
+//    cv::Mat mask_c3(mask.rows, mask.cols, CV_8UC3);
+//    cvtColor(mask, mask_c3, COLOR_GRAY2BGR);
+//    bitwise_not(mask_c3, mask_c3);
+
+//    right.mat += mask_c3;
+
 
 }
 
@@ -104,7 +172,7 @@ void Stereo::ShiftPixels() {
 void Stereo::Inpaint(cv::Mat& right, cv::Mat& mask, float deviation){
 
     mask.forEach<uchar>(
-        [&right, &deviation] ( uchar &pixel, const int * position ){
+        [&right, &mask, &deviation] ( uchar &pixel, const int * position ){
 
             if ( pixel != 0 ) return;
 
@@ -115,12 +183,12 @@ void Stereo::Inpaint(cv::Mat& right, cv::Mat& mask, float deviation){
                 int r_offset = col - offset;
                 int l_offset = col - offset;
 
-                if (r_offset <= right.cols && right.ptr<Vec3b>(row)[r_offset] != Vec3b(0, 0, 0)) {
+                if (r_offset <= right.cols && mask.ptr<uchar>(row)[r_offset] != 0) {
 
                     right.ptr<Vec3b>(row)[col] = right.ptr<Vec3b>(row)[r_offset];
                     break;
                 }
-                if (l_offset >= 0  && right.ptr<Vec3b>(row)[l_offset] != Vec3b(0, 0, 0)) {
+                if (l_offset >= 0  && mask.ptr<uchar>(row)[r_offset] != 0 ) {
 
                     right.ptr<Vec3b>(row)[col] = right.ptr<Vec3b>(row)[l_offset];
                     break;

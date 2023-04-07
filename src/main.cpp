@@ -85,10 +85,11 @@ int main( int argc, char* argv[] ) {
 
     GuiSettings opt;
 
-    Image left("../img/hg.jpg");
-    Depth depth("../img/hg.png");
-    Image right("../img/hg.jpg");
-    Image zoom("../img/hg.jpg");
+    Image left("../img/w.jpg");
+//    Depth depth("../img/hg.png");
+    Depth depth("C:/Users/Flourek/CLionProjects/Stereorizer/cmake-build-relwithdebinfo/output/w-dpt_beit_large_512.png");
+    Image right("../img/w.jpg");
+    Image zoom("../img/w.jpg");
     zoom.gl_filter = GL_NEAREST;
     zoom.createTexture();
 
@@ -100,9 +101,9 @@ int main( int argc, char* argv[] ) {
     auto input_path = std::make_shared<std::string>();
     dragDropInputFile(window, input_path, opt);
 
-    std::string output_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\";
+    std::string output_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/";
     std::string filename = "chuj.jpg";
-    *input_path = "C:\\Users\\Flourek\\CLionProjects\\Stereorizer\\img\\hg.jpg";
+    *input_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/w.jpg";
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
 
@@ -127,7 +128,7 @@ int main( int argc, char* argv[] ) {
             ZoneScopedN("Change INput");
 
             left.changeImage(*input_path);
-//            right.changeImage(*input_path);
+            right.changeImage(*input_path);
             depth.convertToDisplay();
             depth.createTexture();
 

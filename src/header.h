@@ -38,7 +38,7 @@ struct GuiSettings {
     bool save_stereo        = false;
 
     int depth_color_map     = 1;
-    bool inpainting_enable  = true;
+    bool inpainting_enable  = false;
     bool inpainting_glitch  = false;
 
     // Paths
@@ -58,8 +58,8 @@ struct GuiSettings {
     float deviation_multiplier = 1.0f;
 
 
-    int x = 1;
-    int y = 1;
+    int x = 14;
+    int y = 14;
     int z = 1;
 
 };
