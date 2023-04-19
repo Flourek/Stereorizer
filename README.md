@@ -19,7 +19,7 @@ Instead of that you may export a mask of these areas and use that to paint in th
 
 
 ## SteamVR Viewer
-Using the built in viewer you can preview the image you're currently working on with changes being reflected in real-time. <br/> 
+Using the built in viewer you can preview the image you're currently working on with changes being reflected in real-time.
 It's pretty barebones so after you've dialed everything you should probably export and use the viewer of your choice. 
 
 ## Installation
