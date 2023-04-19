@@ -1,11 +1,12 @@
 
 #include <Python.h>
 #include <fstream>
-#include "opencv2/opencv.hpp"
+//#include "opencv2/opencv.hpp"
 #include "iostream"
 #include "header.h"
-#include "Image.h"
+//#include "Image.h"
 #include "Depth.h"
+#include "Opt.h"
 
 void importModules() {
 
@@ -17,8 +18,7 @@ void importModules() {
 
 }
 
-int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt,
-                     PyInterpreterState *interp) {
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, PyInterpreterState *interp) {
 
     // Get the pathname of the new depth image
     std::string result_path = input_path.substr(input_path.find_last_of("/\\") + 1);
@@ -35,9 +35,9 @@ int generateDepthMap(std::string input_path, std::string model_path, Depth &dept
 
         std::cout << "Generating depth map" << std::endl;
 
-        if(opt.midas_first_execution){
+        if(Opt::GetFlags().midas_first_execution){
             importModules();
-            opt.midas_first_execution = false;
+            Opt::GetFlags().midas_first_execution = false;
         }
 
         int argc = 2;

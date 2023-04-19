@@ -3,89 +3,43 @@
 //
 
 #include <opencv2/opencv.hpp>
-#include "GL/gl3w.h"
+#include "GL/glew.h"
 #include "nfd.h"
 #include "imgui.h"
 #include "header.h"
 #include "GLFW/glfw3.h"
-#include "Chrono"
 #include "Tracy.hpp"
 #include "../libs/IconsFontAwesome5.h"
 #include "misc/cpp/imgui_stdlib.h"
 
 #include "Stereo.h"
+#include "Opt.h"
+
+void setImGuiSettings(float resolution_scale){
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FrameRounding = 3.0f;
+    style.Colors[ImGuiCol_Button] = ImColor(135, 41, 80);
+    style.Colors[ImGuiCol_ChildBg] = ImColor(28, 28, 28);
+    style.Colors[ImGuiCol_Header] = ImColor(41, 41, 41);
+    style.Colors[ImGuiCol_FrameBg] = ImColor(71, 71, 71);
+    style.Colors[ImGuiCol_SliderGrab] = ImColor(153, 52, 94);
 
 
+    // ImGui Style Settings
+    io.Fonts->AddFontDefault();
+    float baseFontSize = 20.0f; // 13.0f is the size of the default font. Change to the font size you use.
+    float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
 
+    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+    ImFontConfig icons_config;
+    icons_config.MergeMode = true;
+    icons_config.PixelSnapH = true;
+    icons_config.GlyphMinAdvanceX = iconFontSize;
+    io.Fonts->AddFontFromFileTTF( "./res/fa-solid-900.ttf", iconFontSize, &icons_config, icons_ranges );
 
-
-cv::Mat maskPostProcess(const cv::Mat &mask, const GuiSettings &opt) {
-    cv::Mat blurred, res = mask.clone();
-
-    if(res.channels() == 3)
-        cvtColor(res, res, cv::COLOR_BGR2GRAY);
-
-//    std::cout << res.channels() << " " << CV_8UC1 << std::endl;
-
-    // Invert
-    bitwise_not(res, res);
-
-    // Kernel sizes
-    int morph = 2;
-    int erode = 2;
-    int blur  = 11;
-
-    cv::Mat kernelEx = cv::Mat::ones(morph, morph, CV_8UC1);
-    cv::Mat kernel_erode = cv::Mat::ones(erode, erode, CV_8UC1);
-
-    // Remove noise, patch holes, smooth edges
-    cv::morphologyEx(res, res, cv::MORPH_CLOSE, kernelEx);
-    cv::erode(res, res, kernel_erode);
-    cv::blur(res, res, cv::Size(blur, blur) );
-    cv::threshold(res, res, 127,255, cv::THRESH_BINARY);
-    cv::erode(res, res, erode);
-
-    if(opt.mask_blur){
-
-        // Get the right edge of each island
-        cv::Mat edge(res.rows, res.cols, CV_8UC1);
-        typedef uchar Pixel;
-
-
-        float opacity_step = (float) 255 / opt.mask_blur_size;
-
-        // this is litteraly 10 times faster than normal nested for loops
-        edge.forEach<Pixel> (
-            [&res, &edge, &opacity_step, opt] (Pixel &pixel, const int * position) -> void {
-
-                if(position[1] == 0 || position[1] == res.cols) return;
-
-                Pixel previous = res.at<Pixel>(position[0], position[1] - 1);
-                Pixel current  = res.at<Pixel>(position[0], position[1]);
-                if( previous == 255 && current == 0){
-
-                    for (int i = 0; i < opt.mask_blur_size; ++i) {
-                        if ( position[1] + i > res.cols ) return;
-                        edge.at<Pixel>(position[0], position[1] + i) = cv::saturate_cast<uchar>(255 - i * opacity_step * 4);
-                    }
-                }
-            }
-        );
-
-
-
-
-        res += edge;
-    }
-
-
-
-    if(res.channels() == 1)
-        cvtColor(res, res, cv::COLOR_GRAY2BGR);
-
-    return res;
+    ImGui::GetIO().FontGlobalScale  = 1.0 * resolution_scale;
 }
-
 
 void ImageCenteredWithAspect(GLuint &texture, int target_width, float aspect) {
 
@@ -177,10 +131,6 @@ void EndRightAlign(){
 
 
 
-// Get filepath from user dropping a file on the window
-// Seems this goofy GLFW Callback function is the only way to do it and you can't pass ur own arguments to it
-std::shared_ptr<std::string> chuj;
-GuiSettings* flags_global;
 
 bool openFileDialog(std::string& input_path, std::string& filename, const std::string& default_path){
     nfdchar_t *outPath;
@@ -199,15 +149,8 @@ bool openFileDialog(std::string& input_path, std::string& filename, const std::s
 
 
 void dropCallback(GLFWwindow *window, int count, const char** paths){
-    *chuj = paths[0];
-    (*flags_global).update_input = true;
-}
-
-void dragDropInputFile(GLFWwindow *window, std::shared_ptr<std::string> output_path, GuiSettings &flags) {
-    glfwSetDropCallback(window, dropCallback);
-    chuj = output_path;
-    flags_global = &flags;
-    std::cout << &output_path << std::endl;
+    Opt::Get().image_path = paths[0];
+    Opt::GetFlags().update_input = true;
 }
 
 

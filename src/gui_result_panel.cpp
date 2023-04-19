@@ -2,32 +2,31 @@
 // Created by Flourek on 21/03/2023.
 //
 #define IMGUI_DEFINE_MATH_OPERATORS
+#include "VRController.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "header.h"
 #include "Stereo.h"
 #include "../libs/IconsFontAwesome5.h"
+#include "Opt.h"
 
 
 
-void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, float width) {
+void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
     using namespace ImGui;
-    BeginGroup();
+    auto opt = Opt::Get();
+    auto flags = Opt::GetFlags();
 
+    BeginGroup();
     Text(" Right eye");
     SameLine(0, width - 150);
     Text(" FPS: %.0f", GetIO().Framerate);
 
     BeginChild("ResultImageContainer", ImVec2(width, width), true, ImGuiWindowFlags_NoScrollbar);
 
-        // Main image
+    // Main image
     ImageCenteredWithAspect(stereo.right.texture, width, stereo.right.aspect);
-
-
-
-
-
 
 
     // Tool tip with zoomed in view
@@ -35,7 +34,6 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
     ImGuiHoveredFlags tooltip_flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize;
 
     if (ImGui::IsItemHovered(hover_flags) || opt.zoom_window_stick ) {
-
 
         ImVec2 cursor, popup_pos;
 
@@ -79,8 +77,8 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
 
 
             // Normalize to [0,1] also zoom again idk
-            ImVec2 uv0 = ImVec2( x / image_width   ,
-                                 y / image_height  );
+            ImVec2 uv0 = ImVec2( x / image_width,
+                                 y / image_height);
 
             ImVec2 uv1 = ImVec2( (x + size / opt.zoom_level / opt.viewport_scale) / image_width  ,
                                  (y + size / opt.zoom_level / opt.viewport_scale) / image_height );
@@ -116,9 +114,9 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
         Indent( 8.0f );
         NewLine();
 
-        opt.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
-        opt.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
-        ImGui::Checkbox("Live Refresh", &opt.live_refresh);
+        flags.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
+        flags.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
+        ImGui::Checkbox("Live Refresh", &flags.live_refresh);
 
         NewLine();
         Text("Viewport scale:");
@@ -137,7 +135,7 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
             stereo.right.createTexture();
             stereo.depth.convertToDisplay();
             stereo.depth.createTexture();
-            opt.update_depth |= true;
+            flags.update_depth |= true;
         }
 
         Unindent( 8.0f );
@@ -165,7 +163,7 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
 //                if(opt.save_stereo)
 //                    cv::imwrite(output_path + "chuj_RIGHT.jpg" , right.original);
                 if(opt.save_mask)
-                    cv::imwrite(opt.output_path + "chuj_MASK.jpg" , stereo.maskPostProcess(opt));
+                    cv::imwrite(opt.output_path + "chuj_MASK.jpg" , stereo.maskPostProcess());
 
 
                 if(opt.save_sbs){
@@ -173,7 +171,18 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, 
                     cv::hconcat(stereo.left.mat, stereo.right.mat, sbs);
                     cv::imwrite(opt.output_path + "chuj_SBS_FLAT.jpg" , sbs);
                 }
+            }
 
+            if ( ImGui::Button("Launch SteamVR", ImVec2(0.32 * width, 32)) ){
+
+                if (!flags.vr_enabled){
+                    VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
+                    VRController::Run();
+                    flags.vr_enabled = true;
+                }
+
+                if(flags.vr_enabled)
+                    VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
 
             }
 

@@ -2,8 +2,8 @@
 // Created by Flourek on 29/03/2023.
 //
 
+#include "GL/glew.h"
 #include "Image.h"
-#include "GL/glcorearb.h"
 
 Image::Image(const std::string &path) {
     changeImage(path);

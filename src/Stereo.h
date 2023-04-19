@@ -28,13 +28,13 @@ public:
 
     Stereo(Image &left, Depth &depth, Image &right, float deviation);
 
-    void run(const GuiSettings& opt);
+    void run();
 
-    cv::Mat maskPostProcess(const GuiSettings &opt);
+    cv::Mat maskPostProcess();
 
     double calcBinocularDisparity(double distance);
 
-    void ShiftPixels(const GuiSettings &opt);
+    void ShiftPixels();
 
     static void Inpaint(cv::Mat& right, cv::Mat& mask, float deviation);
 

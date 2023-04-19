@@ -6,11 +6,15 @@
 #include "imgui.h"
 #include "header.h"
 #include "Depth.h"
+#include "Opt.h"
 
-void GuiDepthPanel(Depth &depth, GuiSettings &opt, float width) {
+void GuiDepthPanel(Depth &depth, float width) {
     using namespace ImGui;
-    BeginGroup();
 
+    auto opt = Opt::Get();
+    auto flags = Opt::GetFlags();
+
+    BeginGroup();
     Text(" Depth Map");
 
     BeginChild("DepthImageContainer", ImVec2(width, width), true, ImGuiWindowFlags_NoScrollbar);
@@ -30,7 +34,7 @@ void GuiDepthPanel(Depth &depth, GuiSettings &opt, float width) {
 
         BeginRightAlign("1233123", 1);
         if( Button("Generate", ImVec2(GetContentRegionAvail().x, 20)) ){
-            opt.midas_run = true;
+            flags.midas_run = true;
         }
         EndRightAlign();
 
@@ -47,7 +51,7 @@ void GuiDepthPanel(Depth &depth, GuiSettings &opt, float width) {
         static ImVec2 foo[10] = {ImVec2(-1,0)};
         if (ImGui::Curve("##Das editor", ImVec2(442, 200), 10, foo)) {
             depth.adjust(foo);
-            opt.update_depth |= true;
+            flags.update_depth |= true;
         }
 
         BeginChild("##Editor", ImVec2(442, 0));
@@ -61,7 +65,7 @@ void GuiDepthPanel(Depth &depth, GuiSettings &opt, float width) {
             SetNextItemWidth(GetContentRegionAvail().x);
             if ( ImGui::Combo("##Colormap", &opt.depth_color_map, "Grayscale\0Inferno\0Jet\0Turbo\0Parula\0\0") ) {
                 depth.color_map = opt.depth_color_map;
-                opt.update_depth |= true;
+                flags.update_depth |= true;
             }
 
         EndChild();

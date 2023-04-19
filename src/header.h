@@ -10,6 +10,7 @@
 #include "imgui.h"
 #include "Depth.h"
 #include "Python.h"
+#include "Stereo.h"
 
 
 struct GuiSettings {
@@ -22,6 +23,8 @@ struct GuiSettings {
     bool live_refresh       = true;
     bool midas_run          = false;
     bool midas_first_execution = true;
+    bool vr_enabled          = false;
+
 
 
     // Variables
@@ -38,7 +41,7 @@ struct GuiSettings {
     bool save_stereo        = false;
 
     int depth_color_map     = 1;
-    bool inpainting_enable  = false;
+    bool inpainting_enable  = true;
     bool inpainting_glitch  = false;
 
     // Paths
@@ -85,17 +88,19 @@ cv::Mat updateStereo(class Stereo &stereo, GuiSettings &opt);
 
 
 // Gui
+void setImGuiSettings(float resolution_scale);
 
+void dropCallback(GLFWwindow *window, int count, const char** paths);
 
-void GuiDepthPanel(class Depth &depth, GuiSettings &opt, float width);
+void GuiDepthPanel(Depth &depth, float width);
 
-void GuiImagePanel(class Image &left, Stereo &stereo, GuiSettings &opt, float target_width);
+void GuiImagePanel(Image &left, Stereo &stereo, float target_width);
 
-void GuiResultPanel(struct Stereo &stereo, class Image &zoom, GuiSettings &opt, float width);
+void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width);
 
 void ImageCenteredWithAspect(GLuint &texture, int target_width, float aspect);
 
-void dragDropInputFile(GLFWwindow *window, std::shared_ptr<std::string> output_path, GuiSettings &flags);
+void dragDropInputFile(GLFWwindow *window, std::shared_ptr<std::string> output_path);
 
 void TextCentered(const std::string& text);
 
@@ -112,8 +117,7 @@ void EndRightAlign();
 
 // Depth
 
-int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, GuiSettings &opt,
-                     PyInterpreterState *interp);
+int generateDepthMap(std::string input_path, std::string model_path, Depth &depth, PyInterpreterState *interp);
 
 void importModules();
 

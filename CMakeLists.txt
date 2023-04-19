@@ -13,7 +13,6 @@ set( IMGUI_DIR ${LIBS_DIR}/imgui )
 set( NFD_DIR ${LIBS_DIR}/nativefiledialog )
 
 find_package( OpenCV REQUIRED)
-find_package( OpenCV REQUIRED )
 find_package( OpenGL REQUIRED )
 find_package( PythonLibs REQUIRED)
 
@@ -34,8 +33,16 @@ set ( project_files
         src/Image.cpp
         src/Image.h
         src/Depth.cpp
-        src/Depth.h)
+        src/Depth.h
+        src/VRController.cpp
+        src/VRController.h
 
+        src/VR/camera.h
+        src/VR/shader.h
+        src/VR/vr.cpp
+        src/VR/vr.h src/VR/ThreadSafeMat.h)
+
+# IMGUI
 set( imgui_files
         ${IMGUI_DIR}/imconfig.h
         ${IMGUI_DIR}/imgui.cpp
@@ -65,6 +72,7 @@ include_directories( ${IMGUI_DIR}/backends )
 include_directories( ${IMGUI_DIR}/examples )
 include_directories( ${LIBS_DIR}/imgui-bezier )
 
+# NATIVEFILEDIALOG
 set( nfd_files
         ${NFD_DIR}/src/include/nfd.h
         ${NFD_DIR}/src/common.h
@@ -75,33 +83,58 @@ set( nfd_files
 include_directories( ${NFD_DIR}/)
 include_directories( ${NFD_DIR}/src/include)
 
-set( gl3w
-        ${LIBS_DIR}/gl3w/GL/gl3w.c
-        ${LIBS_DIR}/gl3w/GL/gl3w.h
-        ${LIBS_DIR}/gl3w/GL/glcorearb.h
-        )
-include_directories( ${LIBS_DIR}/gl3w )
+# GLEW
+include_directories(  ${LIBS_DIR}/glew/include )
 
+# GLAD
+set( glad
+    ${LIBS_DIR}/glad/src/glad.c
+)
+include_directories(${LIBS_DIR}/glad/include)
+
+#GLM
+include_directories(${LIBS_DIR}/glm)
+
+# EXE ICON
 set( icons
         ${LIBS_DIR}/IconsFontAwesome5.h
         ${LIBS_DIR}/pyhelper.h
-        )
+        src/Opt.h src/Opt.cpp)
+
 
 add_executable( Stereorizer
         ${imgui_files}
         ${imgui_impl_files}
         ${gl3w}
+        ${glad}
         ${nfd_files}
         ${icons}
         ${project_files}
+        ${openvr}
         ${APP_ICON_RESOURCE_WINDOWS}
         )
 
+# Tracy
 target_compile_definitions(Stereorizer PUBLIC TRACY_ENABLE=1 )
 add_subdirectory(tracy)
 include_directories(tracy/public/tracy)
 add_library(tracy STATIC tracy/public/TracyClient.cpp)
 target_link_libraries (Stereorizer Tracy::TracyClient )
+
+# OpenVR
+set(OPENVR_DIR ${LIBS_DIR}/openvr/)
+
+# Find OpenVR library and include directories
+find_library(OPENVR_LIBRARIES openvr_api HINTS ${OPENVR_DIR}/lib/win64)
+find_path(OPENVR_INCLUDE_DIRS openvr.h HINTS ${OPENVR_DIR}/headers)
+include_directories(${OPENVR_INCLUDE_DIRS})
+target_link_libraries(Stereorizer ${OPENVR_LIBRARIES})
+
+
+#target_link_libraries (Stereorizer ${LIBS_DIR}/openvr/lib/win64/openvr_api.lib )
+#include_directories( ${LIBS_DIR}/openvr/headers )
+
+
 
 # GLFW
 set( GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
@@ -120,7 +153,9 @@ target_link_libraries( Stereorizer ${PYTHON_LIBRARIES})
 target_link_libraries( Stereorizer ${GLFW_LIBRARIES} )
 target_link_libraries( Stereorizer ${OpenCV_LIBS} )
 target_link_libraries( Stereorizer ${OPENGL_LIBRARIES} )
+target_link_libraries( Stereorizer ${LIBS_DIR}/glew/lib/Release/x64/glew32.lib )
 
+message( w: ${OPENGL_INCLUDE_DIR}  )
 
 
 file(COPY res DESTINATION .)
@@ -134,3 +169,11 @@ add_custom_command(
         ${CMAKE_SOURCE_DIR}/src/inference_depth.py
         ${CMAKE_CURRENT_BINARY_DIR}/inference_depth.py)
 
+function(copy_file file)
+    add_custom_command(
+            TARGET GLVR PRE_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_SOURCE_DIR}/${file}
+            ${CMAKE_CURRENT_BINARY_DIR}/${file}
+    )
+endfunction()

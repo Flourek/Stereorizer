@@ -2,15 +2,10 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "GL/gl3w.h"
+#include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "../libs/IconsFontAwesome5.h"
 #include <Python.h>
-#include "Depth.h"
-
-#include "header.h"
-#include "Image.h"
-#include "Stereo.h"
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -20,12 +15,17 @@
 #include "Tracy.hpp"
 #define TRACY_ENABLE
 
-// vw, vh = viewport width, height
-#define SmallImageSize 0.24*vw
-#define ResultImageSize 0.4*vw
+// viewport width, height
+#define SmallImageSize (0.24*vw)
+#define ResultImageSize (0.4*vw)
 
-#include "future"
 #include "thread"
+#include "VRController.h"
+#include "Depth.h"
+#include "header.h"
+#include "Image.h"
+#include "Stereo.h"
+#include "Opt.h"
 
 
 int main( int argc, char* argv[] ) {
@@ -37,69 +37,39 @@ int main( int argc, char* argv[] ) {
     // Get monitor resolution
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     float resolution_scale = mode->width / 1920;
-
+    glEnable(GL_DEBUG_OUTPUT);
+    glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
     GLFWwindow* window = glfwCreateWindow( 1920 * resolution_scale, 1080 * resolution_scale, "Stereorizer", nullptr, nullptr );
     glfwMakeContextCurrent( window );
+    glfwSetDropCallback(window, dropCallback);
     glfwSwapInterval( 1 );
-    gl3wInit();
+    glewInit();
 
-    // Setting window icon
+    std::cout << glGetString(GL_VERSION) << "\n";
 
+    // ImGui
     IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
     ImGui::CreateContext();
     ImGui_ImplGlfw_InitForOpenGL( window, true );
     ImGui_ImplOpenGL3_Init( "#version 330" );
+    setImGuiSettings(resolution_scale);
 
     Py_Initialize();
-    PyInterpreterState* interp = PyInterpreterState_Head();
-
-
-
-    // ImGui
-    ImGuiIO& io = ImGui::GetIO();
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.FrameRounding = 3.0f;
-    style.Colors[ImGuiCol_Button] = ImColor(135, 41, 80);
-    style.Colors[ImGuiCol_ChildBg] = ImColor(28, 28, 28);
-    style.Colors[ImGuiCol_Header] = ImColor(41, 41, 41);
-    style.Colors[ImGuiCol_FrameBg] = ImColor(71, 71, 71);
-    style.Colors[ImGuiCol_SliderGrab] = ImColor(153, 52, 94);
-
-
-    // ImGui Style Settings
-    io.Fonts->AddFontDefault();
-    float baseFontSize = 20.0f; // 13.0f is the size of the default font. Change to the font size you use.
-    float iconFontSize = baseFontSize * 2.0f / 3.0f; // FontAwesome fonts need to have their sizes reduced by 2.0f/3.0f in order to align correctly
-
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
-    ImFontConfig icons_config;
-    icons_config.MergeMode = true;
-    icons_config.PixelSnapH = true;
-    icons_config.GlyphMinAdvanceX = iconFontSize;
-    io.Fonts->AddFontFromFileTTF( "./res/fa-solid-900.ttf", iconFontSize, &icons_config, icons_ranges );
-
-    ImGui::GetIO().FontGlobalScale  = 1.0 * resolution_scale;
-
-
-    GuiSettings opt;
+    PyInterpreterState* pythonInterpeter = PyInterpreterState_Head();
 
     Image left("../img/w.jpg");
-//    Depth depth("../img/hg.png");
     Depth depth("C:/Users/Flourek/CLionProjects/Stereorizer/cmake-build-relwithdebinfo/output/w-dpt_beit_large_512.png");
     Image right("../img/w.jpg");
     Image zoom("../img/w.jpg");
     zoom.gl_filter = GL_NEAREST;
     zoom.createTexture();
 
-    Stereo stereo = Stereo(left, depth, right, opt.deviation);
-
-//    cv::imshow("w", left.display_BGRA);
-//    int e = cv::waitKey(0);
+    Stereo stereo = Stereo(left, depth, right, Opt::Get().deviation);
 
     auto input_path = std::make_shared<std::string>();
-    dragDropInputFile(window, input_path, opt);
+    dragDropInputFile(window, input_path);
 
     std::string output_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/";
     std::string filename = "chuj.jpg";
@@ -109,7 +79,8 @@ int main( int argc, char* argv[] ) {
 
     cv::Mat depth_float;
 
-
+    auto flags = Opt::GetFlags();
+    auto opt = Opt::Get();
 
     while(!glfwWindowShouldClose(window)){
 
@@ -122,68 +93,81 @@ int main( int argc, char* argv[] ) {
         int vw, vh;
         glfwGetFramebufferSize(window, &vw, &vh);
 
-        opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
+        flags.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
-        if (opt.update_input) {
-            ZoneScopedN("Change INput");
+        if (flags.update_input) {
+            ZoneScopedN("Change Input");
 
             left.changeImage(*input_path);
             right.changeImage(*input_path);
-            depth.convertToDisplay();
-            depth.createTexture();
 
             opt.viewport_scale = left.getScaleSuggestion();
+
             zoom.mat = right.mat;
             zoom.createTexture();
 
-            opt.update_input = false;
-            opt.update_depth = true;
-            opt.update_stereo = opt.live_refresh;
+            if(flags.vr_enabled)
+                VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
+
+            flags.update_input = false;
+            flags.update_depth = true;
+            flags.update_stereo = flags.live_refresh;
         }
 
-        if(opt.midas_run){
+        if(flags.midas_run){
 
             std::thread t;
 
             t = std::thread([&]() {
-                generateDepthMap(*input_path, opt.model_path, depth, opt, interp);
-                opt.update_depth = true;
+                generateDepthMap(*input_path, Opt::Get().model_path, depth, nullptr);
                 std::cout << "DONE XD"<< std::endl;
-                depth.convertToDisplay();
-                depth.createTexture();
+                stereo.resizeAll( opt.viewport_scale);
+
+                flags.update_depth = true;
+
             });
 
             t.detach();
-
-            opt.midas_run = false;
+            flags.midas_run = false;
         }
 
-        if (opt.update_depth) {
+        if (flags.update_depth) {
             ZoneScopedN("Depth");
             depth.convertToDisplay();
-            depth.updateTexture();
+            depth.createTexture();
 
-//            depth.convertToFloat();
-//            depth.convertToDisplay();
-            opt.update_stereo = opt.live_refresh;
-            opt.update_depth = false;
+            flags.update_stereo = flags.live_refresh;
+            flags.update_depth = false;
         }
 
-        opt.size_mismatch = ( left.original.size != depth.original.size );
+        flags.size_mismatch = (left.original.size != depth.original.size );
 
-        if (!opt.size_mismatch){
+        if (!flags.size_mismatch){
             ZoneScopedN("Stereo");
 
-            if ( (opt.update_stereo && opt.live_refresh) || opt.force_update){
-                stereo.run(opt);
+            if ((flags.update_stereo && flags.live_refresh) || flags.force_update){
+                stereo.run();
 
 //                zoom.mat = right.mat;
 //                zoom.createTexture();
 
-                opt.force_update = false;
-                opt.update_stereo = false;
+                flags.force_update = false;
+                flags.update_stereo = false;
+
+
+
+                if(flags.vr_enabled){
+                    VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
+                    VRController::Get().texturesUpdated = true;
+                }
+
+
+//                if(opt.vr_enabled){
+//                }
+
             }
         }
+
 
         using namespace ImGui; {
             static int counter = 0;
@@ -194,13 +178,13 @@ int main( int argc, char* argv[] ) {
             Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
             Indent(16.0f);
-            GuiImagePanel(left, stereo, opt, SmallImageSize);
+            GuiImagePanel(left, stereo, SmallImageSize);
 
             SameLine(0, 0.04*vw);
-            GuiDepthPanel(depth, opt, SmallImageSize);
+            GuiDepthPanel(depth, SmallImageSize);
 
             SameLine(0, 0.04*vw);
-            GuiResultPanel(stereo, zoom, opt, ResultImageSize);
+            GuiResultPanel(stereo, zoom, ResultImageSize);
 
             ImGui::End();
         }

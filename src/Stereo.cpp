@@ -7,6 +7,7 @@
 #include "header.h"
 #include <iostream>
 #include <cmath>
+#include "Opt.h"
 
 using namespace std;
 using namespace cv;
@@ -21,27 +22,29 @@ Stereo::Stereo(Image &left, Depth &depth, Image &right, float deviation)
 }
 
 
-void Stereo::run(const GuiSettings& opt) {
+void Stereo::run() {
 
     mask = 0;
     right.mat = 0;
+
+    auto opt = Opt::Get();
 
     // Resize inputs so that they all match
     resizeAll(opt.viewport_scale);
 
 //    deviation = (opt.deviation * opt.deviation_multiplier) * (float) target_size.width / 500;
 
-    ShiftPixels(opt);
+    ShiftPixels();
 
     if(opt.inpainting_enable)
         Inpaint(right.mat, mask, opt.deviation);
 
     if(opt.mask_overlay)
-        right.mat += maskPostProcess(opt);
+        right.mat += maskPostProcess();
 
-    Vec3b w = right.mat.at<Vec3b>(1, 1);
-    Vec3b b = right.mat.at<Vec3b>(1, 2);
-    std::cout << w << " " << b << " " << w - b << std::endl;
+//    Vec3b w = right.mat.at<Vec3b>(1, 1);
+//    Vec3b b = right.mat.at<Vec3b>(1, 2);
+//    std::cout << w << " " << b << " " << w - b << std::endl;
 
 
     cv::Mat test(mask.rows, mask.cols, CV_8UC3);
@@ -70,6 +73,7 @@ void Stereo::resizeAll(int scale) {
 
     if(right.mat.size() != target_size){
         cv::resize(right.original, right.mat, target_size);
+
         right.convertToDisplay();
         right.createTexture();
     }
@@ -86,9 +90,10 @@ void Stereo::resizeAll(int scale) {
 
 
 
-void Stereo::ShiftPixels(const GuiSettings &opt) {
+void Stereo::ShiftPixels() {
 
     #define M_PI 3.14159265358979323846
+    auto opt = Opt::Get();
 
     // Normalizing the range of depth pixel values to user defined distance range
     float distances[UINT16_MAX + 1];
@@ -97,15 +102,12 @@ void Stereo::ShiftPixels(const GuiSettings &opt) {
         distances[i] = near_distance + step * i;
     }
 
-    cv::Mat test(mask.rows, mask.cols, CV_8UC3);
-    test = 0;
-
     if(pixel_size == 0) pixel_size = 0.00001;
 
     int prev_col_r = 0;
 
     depth.mat.forEach<ushort>(
-        [this, &distances, &test, &opt, &prev_col_r] ( ushort &pixel, const int * position ){
+        [this, &distances,  &opt, &prev_col_r] ( ushort &pixel, const int * position ){
 
             int row = position[0];
             int col = position[1];
@@ -127,44 +129,9 @@ void Stereo::ShiftPixels(const GuiSettings &opt) {
 
                 }
 
-
-//                if( pixel - depth.mat.at<ushort>(row, col_r) > (opt.x * UINT16_MAX/100)  )
-//                    test.at<cv::Vec3b>(row, col_r) = Vec3b(255, 255, 255);
             }
         }
     );
-//
-//    cv::Mat res(mask.rows, mask.cols, CV_8UC3);
-//    cv::copyTo(right.mat, res, test);
-//    right.mat = res;
-
-//    for (int row = 0; row < mask.rows; ++row) {
-//        for (int col = 0; col < mask.cols; ++col) {
-//
-//            Vec3b lefte = right.mat.at<Vec3b>(row, col - 1);
-//            Vec3b righte = right.mat.at<Vec3b>(row, col + 1);
-//
-//            Vec3b dif = lefte - righte;
-//            int threshold = opt.y;
-//
-//            bool paint = true;
-//            for (int i = 0; i < 2; ++i) {
-//                if ( abs(dif[i]) > threshold )
-//                    break;
-//                paint = false;
-//            }
-//
-//            if (paint)
-//                mask.at<uchar>(row, col) = 0;
-//        }
-//    }
-
-//    cv::Mat mask_c3(mask.rows, mask.cols, CV_8UC3);
-//    cvtColor(mask, mask_c3, COLOR_GRAY2BGR);
-//    bitwise_not(mask_c3, mask_c3);
-
-//    right.mat += mask_c3;
-
 
 }
 
@@ -202,7 +169,7 @@ void Stereo::Inpaint(cv::Mat& right, cv::Mat& mask, float deviation){
 
 
 
-cv::Mat Stereo::maskPostProcess(const GuiSettings &opt) {
+cv::Mat Stereo::maskPostProcess() {
     cv::Mat blurred, res = mask.clone();
 
     if(res.channels() == 3)
@@ -227,6 +194,8 @@ cv::Mat Stereo::maskPostProcess(const GuiSettings &opt) {
     cv::blur(res, res, cv::Size(blur, blur) );
     cv::threshold(res, res, 127,255, cv::THRESH_BINARY);
     cv::erode(res, res, erode);
+
+    auto opt = Opt::Get();
 
     if(opt.mask_blur){
 

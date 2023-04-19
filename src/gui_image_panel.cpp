@@ -4,16 +4,18 @@
 
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "GL/gl3w.h"
+#include "GL/glew.h"
 #include "header.h"
 #include "Image.h"
-#include "../libs/IconsFontAwesome5.h"
 #include "Stereo.h"
 
+#include "Opt.h"
 
-void GuiImagePanel(Image &left, Stereo &stereo, GuiSettings &opt, float target_width) {
+// Returns true if ImGui was interacted with
+void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
 
     using namespace ImGui;
+    bool update = false;
 
     BeginGroup();
     Text(" Left eye");
@@ -32,11 +34,9 @@ void GuiImagePanel(Image &left, Stereo &stereo, GuiSettings &opt, float target_w
         Unindent(8.0f);
         NewLine();
     }
-//    EndChild();
 
-    if (opt.size_mismatch){
+    if (Opt::GetFlags().size_mismatch){
         BeginChild("scrolling", ImVec2(243, 35));
-//                        PushStyleColor(ImGuiCol_ChildBg, IM_COL32(200,20,20,255));
         PushItemWidth(235);
         SameLine(6);
 
@@ -60,19 +60,19 @@ void GuiImagePanel(Image &left, Stereo &stereo, GuiSettings &opt, float target_w
 //        RightAlignNextItem("Mask blur");
         BeginRightAlign("erf", 1);
         SetNextItemWidth(GetContentRegionAvail().x);
-            ImGui::SliderFloat("##", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
+            ImGui::SliderFloat("##", (float*) &Opt::Get().mask_blur_size, 1.0f, 255.0f);
         EndRightAlign();
 //        opt.update_stereo |= RightAlignedSlider("Strength", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
 
         NewLine();
 
         RightAlignNextItem("Inpainting");
-        opt.update_stereo |= Checkbox("Enable", &opt.inpainting_enable);
+        update |= Checkbox("Enable", &Opt::Get().inpainting_enable);
         SameLine(0, 10);
-        opt.update_stereo |= Checkbox("Glitched", &opt.inpainting_glitch);
-        opt.update_stereo |= SliderFloat("damp", &opt.deviation,     1.0f, 500.0f);
-        opt.update_stereo |= SliderInt("diffef", &opt.x,     0.0f, 100.0f);
-        opt.update_stereo |= SliderInt("iterat", &opt.y,     1.0f, 255.0f);
+        update |= Checkbox("Glitched", &Opt::Get().inpainting_glitch);
+        update |= SliderFloat("damp",  &Opt::Get().deviation,     1.0f, 500.0f);
+        update |= SliderInt("diffef",  &Opt::Get().x,             0.0f, 100.0f);
+        update |= SliderInt("iterat",  &Opt::Get().y,             1.0f, 255.0f);
 
 
 //        opt.update_stereo |= RightAlignedSlider("Ciul", (float*) &opt.y, 0.0f, 10.0f);
@@ -84,36 +84,35 @@ void GuiImagePanel(Image &left, Stereo &stereo, GuiSettings &opt, float target_w
         Indent(8.0f);
         NewLine();
 
-        opt.update_stereo |= SliderFloat("##Deviatione", &opt.deviation, 0.0f, 100.0f);
+        update |= SliderFloat("##Deviatione", &Opt::Get().deviation, 0.0f, 100.0f);
         SameLine();
         AlignTextToFramePadding();
         Text("x");
         SetNextItemWidth(45);
         SameLine();
         static std::string chuj = "1.0";
-        opt.update_stereo |= InputText("##Multipliere", &chuj, ImGuiInputTextFlags_CharsDecimal);
+        update |= InputText("##Multipliere", &chuj, ImGuiInputTextFlags_CharsDecimal);
         try{
-            opt.deviation_multiplier = std::stof(chuj);
+            Opt::Get().deviation_multiplier = std::stof(chuj);
         } catch (std::exception& e) {}
 
-        opt.update_stereo |= SliderFloat("damp", &stereo.dampener,     1.0f, 1000.0f);
-        opt.update_stereo |= SliderFloat("ipde",  &stereo.ipd,          1.0f, 10.0f);
-        opt.update_stereo |= SliderFloat("foca", &stereo.focal_length, 1.0f, 100.0f);
-        opt.update_stereo |= SliderFloat("size", &stereo.pixel_size,   0.001f, 1.0f);
-        opt.update_stereo |= InputInt("Near Distance", &stereo.near_distance);
-        opt.update_stereo |= InputInt("Far Distance", &stereo.far_distance);
+        update |= SliderFloat("damp", &stereo.dampener,     1.0f, 1000.0f);
+        update |= SliderFloat("ipde",  &stereo.ipd,          1.0f, 10.0f);
+        update |= SliderFloat("foca", &stereo.focal_length, 1.0f, 100.0f);
+        update |= SliderFloat("size", &stereo.pixel_size,   0.001f, 1.0f);
+        update |= InputInt("Near Distance", &stereo.near_distance);
+        update |= InputInt("Far Distance", &stereo.far_distance);
 
-                NewLine();
-        opt.force_update |= Button("Stereoify");
+        NewLine();
+        update |= Button("Stereoify");
 
         Unindent(8.0f);
         NewLine();
     }
     EndChild();
-
-
-
-
     EndGroup();
+
+    Opt::GetFlags().update_stereo = update;
+
 }
 
