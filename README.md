@@ -2,6 +2,8 @@
 
 Easily add realistic depth perception to **any** image you want by generating a stereoscopic pair for viewing in VR
 
+<img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
+
 ## Depth map generation
 The view from the other eye is based on a depth map, where brighter values mean the pixel is closer, and therefore it is offset by a larger value. <br/>
 It's automatically generated using machine learning - [MiDaS](https://github.com/isl-org/MiDaS).
@@ -19,8 +21,12 @@ Instead of that you may export a mask of these areas and use that to paint in th
 
 
 ## SteamVR Viewer
+
+<img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
+
 Using the built in viewer you can preview the image you're currently working on with changes being reflected in real-time.
 It's pretty barebones so after you've dialed everything you should probably export and use the viewer of your choice. 
+
 
 ## Installation
 Prerequisites: Python 3.0
