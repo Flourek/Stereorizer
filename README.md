@@ -3,8 +3,8 @@
 Easily add realistic depth perception to **any** image you want by generating a stereoscopic pair for viewing in VR
 
 ## Depth map generation
-The view from the other eye is based on a depth map, where brighter values mean the pixel is closer, and therefore it is offset by a larger value.
-It's automatically generated using machine learning - [MiDaS](https://github.com/isl-org/MiDaS). You should use the best model possible. 
+The view from the other eye is based on a depth map, where brighter values mean the pixel is closer, and therefore it is offset by a larger value. <br/>
+It's automatically generated using machine learning - [MiDaS](https://github.com/isl-org/MiDaS).
 
 You may also choose to author the depth map yourself and use that instead. 
 
@@ -12,7 +12,8 @@ The quality of the final result depends entirely on the quality of this depth ma
 
 ## Inpainting
 It's hard to tell what should be in the newly exposed areas that aren't in the original image. <br/>
-You can select a few different inpainting methods which are all based on surrounding pixels. 
+
+Select from a few different inpainting methods which are based on the surrounding pixels. 
 
 Instead of that you may export a mask of these areas and use that to paint in these areas in your favourite image editing software, however in most cases the stereo deviation is too small for this to be necessary.
 
