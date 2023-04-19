@@ -2,7 +2,9 @@
 
 Easily add realistic depth perception to **any** image you want by generating a stereoscopic pair for viewing in VR
 
-<img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
+<p align="center">
+  <img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
+</p>
 
 ## Depth map generation
 The view from the other eye is based on a depth map, where brighter values mean the pixel is closer, and therefore it is offset by a larger value. <br/>
@@ -22,8 +24,9 @@ Instead of that you may export a mask of these areas and use that to paint in th
 
 ## SteamVR Viewer
 
-<img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
-
+<p align="center">
+  <img src="https://media.tenor.com/2F4FpfPSFJoAAAAd/shower-cat.gif " width="600" height="300">
+</p>
 Using the built in viewer you can preview the image you're currently working on with changes being reflected in real-time.
 It's pretty barebones so after you've dialed everything you should probably export and use the viewer of your choice. 
 
