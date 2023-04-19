@@ -22,10 +22,13 @@ Using the built in viewer you can preview the image you're currently working on 
 It's pretty barebones so after you've dialed everything you should probably export and use the viewer of your choice. 
 
 ## Installation
-Python >3.8 is a prerequisite.
+Prerequisites: Python 3.0
+
 * Download the latest release
-* Install MiDaS' dependencies 
-* Download [dpt_beit_large_512.pt](https://github.com/isl-org/MiDaS/releases/download/v3_1/dpt_beit_large_512.pt) and put it in MiDaS/models
+* Run `Install.bat`, which will: 
+  * Make sure Python is installed
+  * Install MiDaS' dependencies 
+  * Download [dpt_beit_large_512.pt](https://github.com/isl-org/MiDaS/releases/download/v3_1/dpt_beit_large_512.pt) and put it in MiDaS/models
 * Done :)
 
 ## Building
