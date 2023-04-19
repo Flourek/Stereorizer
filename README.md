@@ -1,8 +1,9 @@
 # Stereorizer
-Generates stereoscopic pairs from any image. Comes with a SteamVR viewer.
 
-# SteamVR viewer
+Easily add realistic depth perception to any image ever. The program generates a stereoscopic pair for viewing in VR
 
-# Installation
+## SteamVR viewer
 
-# Building
+## Installation
+
+## Building
