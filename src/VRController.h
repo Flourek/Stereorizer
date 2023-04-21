@@ -6,9 +6,17 @@
 #include "thread"
 #include <opencv2/opencv.hpp>
 #include "VR/ThreadSafeMat.h"
+#include "GLFW/glfw3.h"
+#include "imgui.h"
+
 
 #ifndef STEREORIZER_VRCONTROLLER_H
 #define STEREORIZER_VRCONTROLLER_H
+
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 400;
+const unsigned int RENDER_WIDTH =  4000;
+const unsigned int RENDER_HEIGHT = 4000;
 
 
 class VRController {
@@ -20,6 +28,11 @@ public:
     ThreadSafeMat m_left;
     ThreadSafeMat m_right;
 
+    GLFWwindow* m_Window;
+    GLFWwindow* m_MainWindow;
+    ImGuiContext* m_ImGuiContext;
+    ImGuiContext* m_MainImGuiContext;
+
 
     bool sizeChanged = true;
 
@@ -30,6 +43,7 @@ public:
     static void Run();
     void SetMats(cv::Mat& left, cv::Mat& right);
     void SetTextures(uint32_t left_texture, uint32_t right_texture);
+    void DrawImGui();
 
 
 private:
@@ -39,6 +53,8 @@ private:
 
     void IRun();
     void Init();
+    bool MakeWindow();
+
 
 
     static VRController s_Instance;

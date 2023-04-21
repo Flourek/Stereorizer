@@ -9,7 +9,6 @@ set( CMAKE_CXX_EXTENSIONS OFF )
 project( Stereorizer )
 
 set( LIBS_DIR ${CMAKE_CURRENT_LIST_DIR}/libs)
-set( IMGUI_DIR ${LIBS_DIR}/imgui )
 set( NFD_DIR ${LIBS_DIR}/nativefiledialog )
 
 find_package( OpenCV REQUIRED)
@@ -43,6 +42,7 @@ set ( project_files
         src/VR/vr.h src/VR/ThreadSafeMat.h)
 
 # IMGUI
+set( IMGUI_DIR ${LIBS_DIR}/imgui-docking )
 set( imgui_files
         ${IMGUI_DIR}/imconfig.h
         ${IMGUI_DIR}/imgui.cpp
@@ -67,6 +67,8 @@ set( imgui_impl_files
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.h
         ${IMGUI_DIR}/backends/imgui_impl_opengl3.cpp
         )
+
+
 include_directories( ${IMGUI_DIR} )
 include_directories( ${IMGUI_DIR}/backends )
 include_directories( ${IMGUI_DIR}/examples )

@@ -172,11 +172,11 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
 
             if ( ImGui::Button("Launch SteamVR", ImVec2(0.32 * width, 32)) ){
 
-                if (!opt.vr_enabled){
-                    VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
-                    VRController::Run();
-                    opt.vr_enabled = true;
-                }
+//                if (!opt.vr_enabled){
+//                    VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
+//                    VRController::Run();
+//                    opt.vr_enabled = true;
+//                }
 
                 if(opt.vr_enabled)
                     VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);

@@ -1,24 +1,17 @@
-#include <iostream>
-
-#include <opencv2/opencv.hpp>
-
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
-#include "../libs/IconsFontAwesome5.h"
-#include <Python.h>
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include "misc/cpp/imgui_stdlib.h"
 
+#include <opencv2/opencv.hpp>
+#include <Python.h>
+
+//#define TRACY_ENABLE
 #include "Tracy.hpp"
-#define TRACY_ENABLE
 
-// viewport width, height
-#define SmallImageSize (0.24*vw)
-#define ResultImageSize (0.4*vw)
-
+#include <iostream>
 #include "thread"
 #include "VRController.h"
 #include "Depth.h"
@@ -28,15 +21,19 @@
 #include "Opt.h"
 
 
+// viewport width, height
+#define SmallImageSize (0.24*vw)
+#define ResultImageSize (0.4*vw)
+
 int main( int argc, char* argv[] ) {
 
-    if( !glfwInit() ){
-        return -1;
-    }
+    if( !glfwInit() ) return -1;
 
     // Get monitor resolution
     const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
     float resolution_scale = mode->width / 1920;
+
+    // Init glfw
     glEnable(GL_DEBUG_OUTPUT);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
     glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
@@ -52,13 +49,22 @@ int main( int argc, char* argv[] ) {
     // ImGui
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGui_ImplGlfw_InitForOpenGL( window, true );
-    ImGui_ImplOpenGL3_Init( "#version 330" );
-    setImGuiSettings(resolution_scale);
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+//    setImGuiSettings(resolution_scale);
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+//    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;         // Enable Docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigViewportsNoAutoMerge = true;
 
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 130");
+
+    // Init python
     Py_Initialize();
     PyInterpreterState* pythonInterpeter = PyInterpreterState_Head();
 
+    // Default images
     Image left("../img/w.jpg");
     Depth depth("C:/Users/Flourek/CLionProjects/Stereorizer/cmake-build-relwithdebinfo/output/w-dpt_beit_large_512.png");
     Image right("../img/w.jpg");
@@ -68,19 +74,14 @@ int main( int argc, char* argv[] ) {
     zoom.createTexture();
 
     Stereo stereo = Stereo(left, depth, right, Opt::Get().deviation);
-
-
-    std::string output_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/";
-    std::string filename = "chuj.jpg";
-
-    GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
-
     cv::Mat depth_float;
 
     Opt& opt = Opt::Get();
 
-
     while(!glfwWindowShouldClose(window)){
+        glfwMakeContextCurrent(window);
+
+        glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -113,12 +114,10 @@ int main( int argc, char* argv[] ) {
             std::thread t;
 
             t = std::thread([&]() {
-                generateDepthMap(opt.image_path, Opt::Get().model_path, depth, nullptr);
+                generateDepthMap(opt.image_path, Opt::Get().model_path, depth, pythonInterpeter);
                 std::cout << "DONE XD"<< std::endl;
                 stereo.resizeAll( opt.viewport_scale);
-
                 opt.update_depth = true;
-
             });
 
             t.detach();
@@ -136,6 +135,13 @@ int main( int argc, char* argv[] ) {
 
         opt.size_mismatch = (left.original.size != depth.original.size );
 
+        if (!opt.vr_enabled){
+            VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
+            VRController::Get().m_MainWindow = window;
+            VRController::Run();
+            opt.vr_enabled = true;
+        }
+
         if (!opt.size_mismatch){
             ZoneScopedN("Stereo");
 
@@ -152,8 +158,6 @@ int main( int argc, char* argv[] ) {
                     VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
                     VRController::Get().texturesUpdated = true;
                 }
-
-
             }
         }
 
@@ -164,26 +168,47 @@ int main( int argc, char* argv[] ) {
         int vw, vh;
         glfwGetFramebufferSize(window, &vw, &vh);
 
-        ImGui::SetNextWindowPos( ImVec2(0,0) );
-        ImGui::SetNextWindowSize( ImVec2(vw, vh) );
-        ImGui::Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
-                               ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
+//        ImGui::Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize
+//                                    | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus
+//                                    | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_DockNodeHost);
 
-        ImGui::Indent(16.0f);
-        GuiImagePanel(left, stereo, SmallImageSize);
+        ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowPos( ImVec2(viewport->Pos.x, viewport->Pos.y) );
+        ImGui::SetNextWindowSize( ImVec2(viewport->Size.x, viewport->Size.y ) );
+        ImGui::Begin("main", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoResize);
 
-        ImGui::SameLine(0, 0.04*vw);
-        GuiDepthPanel(depth, SmallImageSize);
+            ImGui::Indent(16.0f);
+            GuiImagePanel(left, stereo, SmallImageSize);
 
-        ImGui::SameLine(0, 0.04*vw);
-        GuiResultPanel(stereo, zoom, ResultImageSize);
+            ImGui::SameLine(0, 0.04*vw);
+            GuiDepthPanel(depth, SmallImageSize);
+
+            ImGui::SameLine(0, 0.04*vw);
+            GuiResultPanel(stereo, zoom, ResultImageSize);
 
         ImGui::End();
 
+        if(opt.vr_enabled)
+            VRController::Get().DrawImGui();
+
+
         ImGui::Render();
+        glViewport(0, 0, vw, vh);
+        glClearColor(0, 0, 0, 0);
+        glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
-        glfwPollEvents();
+
+
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            glfwMakeContextCurrent(window);
+        }
+
         glfwSwapBuffers( window );
+
+
         FrameMark;
     }
 

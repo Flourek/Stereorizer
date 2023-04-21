@@ -1,6 +1,6 @@
 
 
-#include <glad/glad.h>
+#include "GL/glew.h"
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -24,11 +24,6 @@ void processInput(GLFWwindow *window);
 
 // settings
 bool vr_enabled = true;
-
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 400;
-const unsigned int RENDER_WIDTH =  4000;
-const unsigned int RENDER_HEIGHT = 4000;
 
 
 struct Cameras{
@@ -264,46 +259,36 @@ void dropCallback(GLFWwindow *window, int count, const char** paths){
 
 int run(VRController &controller) {
 
-    glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE );
-    glfwWindowHint(GLFW_MAXIMIZED, GLFW_FALSE);
+    GLFWwindow * window = controller.m_Window;
+    glfwMakeContextCurrent( window);
+    glewInit();
 
-    // glfw window creation
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Viewer", NULL, NULL);
-    if (window == NULL) {
-        std::cout << "Failed to create GLFW window" << std::endl;
-        return -1;
-    }
 
-    glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-//    glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetDropCallback(window, dropCallback);
-    glfwSwapInterval(0);
 
-    // tell GLFW to capture our mouse
 
-    // glad: load all OpenGL function pointers
-    // ---------------------------------------
-    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-    {
-        std::cout << "Failed to initialize GLAD" << std::endl;
-        return -1;
-    }
+//    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+//    {
+//        std::cout << "Failed to initialize GLAD" << std::endl;
+//        return -1;
+//    }
 
-    // Initialize OpenVR
-    if (vr::VR_IsHmdPresent() && vr_enabled) {
-        auto VRError = vr::VRInitError_None;
-        auto VRSystem = vr::VR_Init(&VRError, vr::VRApplication_Scene);
-
-        if (VRError != vr::VRInitError_None){
-            std::cout << "OpenVR initialization failed: " << vr::VR_GetVRInitErrorAsEnglishDescription(VRError) << std::endl;
-            return 1;
-        }
-
-    }else{
-        std::cout << "HMD not found" << std::endl;
-    }
+//     Initialize OpenVR
+//    if (vr::VR_IsHmdPresent() && vr_enabled) {
+//        auto VRError = vr::VRInitError_None;
+//        auto VRSystem = vr::VR_Init(&VRError, vr::VRApplication_Scene);
+//
+//        if (VRError != vr::VRInitError_None){
+//            std::cout << "OpenVR initialization failed: " << vr::VR_GetVRInitErrorAsEnglishDescription(VRError) << std::endl;
+//            return 1;
+//        }
+//
+//    }else{
+//        std::cout << "HMD not found" << std::endl;
+//    }
 
 
 
@@ -374,70 +359,29 @@ int run(VRController &controller) {
 
     Shader ourShader("../src/VR/camera.vs", "../src/VR/camera.fs");
     ourShader.use();
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+    int i = 0;
+    controller.m_rightTexture = eyes[RIGHT].texture;
+    controller.m_leftTexture =  eyes[LEFT].texture;
 
-    vr::TrackedDevicePose_t vrTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
-    vr::VRCompositor()->SetTrackingSpace(vr::TrackingUniverseStanding);
-    vr::VRChaperone()->ResetZeroPose(vr::TrackingUniverseStanding);
-
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glClearColor(0.2f, 0.3f, 0.8f, 1.0f);
     while (!glfwWindowShouldClose(window)) {
-
-        vr::VRCompositor()->WaitGetPoses(vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, nullptr, 0);
-
-        float currentFrame = static_cast<float>(glfwGetTime());
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        glm::mat4 eyeDisparity;
-        glm::mat4 projection;
-
-        if(controller.sizeChanged){
-            eyes[LEFT].color = makeQuadTexture(controller.m_left);
-            eyes[RIGHT].color = makeQuadTexture(controller.m_right);
-
-            controller.sizeChanged = false;
-        }
-
-        if(controller.texturesUpdated){
-            updateQuadTexture(eyes[LEFT].color,  controller.m_left);
-            updateQuadTexture(eyes[RIGHT].color, controller.m_right);
-//            std::cout << "update chyba \n";
-            controller.texturesUpdated = false;
-        }
-
-
+        i += 1000000;
 
         glBindFramebuffer(GL_FRAMEBUFFER, fbo);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
-
         for (int i = 0; i < 2; ++i) {
 
+            if(i==0){
+                glClearColor((float) ((float) i / (float) INT_MAX), 0.3f, 0.3f, 1.0f);
+            }else{
+                glClearColor(0.6f, 0.3f, (float) ((float) i / (float) INT_MAX), 1.0f);
+            }
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, eyes[i].texture, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glBindTexture(GL_TEXTURE_2D, eyes[i].color);
-            projection = getHMDMatrixProjectionEye(eyes[i].steam);
-            eyeDisparity = getHMDMatrixPoseEye(eyes[i].steam);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glm::mat4 hmdPose = convertSteamVRmatToGLM( vrTrackedDevicePose[0].mDeviceToAbsoluteTracking );
-            hmdPose = glm::inverse(hmdPose);
-
-            // Moving the quad and applying aspect ratio
-            glm::mat4 model = glm::mat4(1.0f);
-            model = glm::translate(model, cubePositions[0]);
-            model = glm::scale(model, glm::vec3(1.0f, imageAspect, 1.0f) );
-
-            glm::mat4 mvp = projection * hmdPose * eyeDisparity  * model;
-
-            ourShader.use();
-            ourShader.setMat4("mvp", mvp);
-
-            // Render quad
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-
-            // Draw textures in the companion window
             glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
             glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
             if(i == LEFT)
@@ -446,32 +390,110 @@ int run(VRController &controller) {
                 glBlitFramebuffer(0, 0, RENDER_WIDTH, RENDER_HEIGHT, SCR_WIDTH / 2, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
             glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-
         }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        // Pass textures to OpenVR
-        vr::Texture_t leftEye  = {(void *) (uintptr_t) eyes[LEFT].texture,  vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
-        vr::Texture_t rightEye = {(void *) (uintptr_t) eyes[RIGHT].texture, vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
-
-        int error = 0;
-        error |= vr::VRCompositor()->Submit(vr::Eye_Left, &leftEye);
-        error |= vr::VRCompositor()->Submit(vr::Eye_Right, &rightEye);
-
-        if(error != vr::VRCompositorError_None)
-            std::cout << "Submit error: " << error;
 
 
-        processInput(window);
         glfwPollEvents();
         glfwSwapBuffers(window);
     }
+//
+//
+//    vr::TrackedDevicePose_t vrTrackedDevicePose[vr::k_unMaxTrackedDeviceCount];
+//    vr::VRCompositor()->SetTrackingSpace(vr::TrackingUniverseStanding);
+//    vr::VRChaperone()->ResetZeroPose(vr::TrackingUniverseStanding);
+//
+//    while (!glfwWindowShouldClose(window)) {
+//
+//        vr::VRCompositor()->WaitGetPoses(vrTrackedDevicePose, vr::k_unMaxTrackedDeviceCount, nullptr, 0);
+//
+//        float currentFrame = static_cast<float>(glfwGetTime());
+//        deltaTime = currentFrame - lastFrame;
+//        lastFrame = currentFrame;
+//
+//        glm::mat4 eyeDisparity;
+//        glm::mat4 projection;
+//
+//        if(controller.sizeChanged){
+//            eyes[LEFT].color = makeQuadTexture(controller.m_left);
+//            eyes[RIGHT].color = makeQuadTexture(controller.m_right);
+//
+//            controller.sizeChanged = false;
+//        }
+//
+//        if(controller.texturesUpdated){
+//            updateQuadTexture(eyes[LEFT].color,  controller.m_left);
+//            updateQuadTexture(eyes[RIGHT].color, controller.m_right);
+////            std::cout << "update chyba \n";
+//            controller.texturesUpdated = false;
+//        }
+//
+//
+//
+//        glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glViewport(0, 0, RENDER_WIDTH, RENDER_HEIGHT);
+//
+//        for (int i = 0; i < 2; ++i) {
+//
+//
+//            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, eyes[i].texture, 0);
+//            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//            glBindTexture(GL_TEXTURE_2D, eyes[i].color);
+//            projection = getHMDMatrixProjectionEye(eyes[i].steam);
+//            eyeDisparity = getHMDMatrixPoseEye(eyes[i].steam);
+//
+//            glm::mat4 hmdPose = convertSteamVRmatToGLM( vrTrackedDevicePose[0].mDeviceToAbsoluteTracking );
+//            hmdPose = glm::inverse(hmdPose);
+//
+//            // Moving the quad and applying aspect ratio
+//            glm::mat4 model = glm::mat4(1.0f);
+//            model = glm::translate(model, cubePositions[0]);
+//            model = glm::scale(model, glm::vec3(1.0f, imageAspect, 1.0f) );
+//
+//            glm::mat4 mvp = projection * hmdPose * eyeDisparity  * model;
+//
+//            ourShader.use();
+//            ourShader.setMat4("mvp", mvp);
+//
+//            // Render quad
+//            glBindVertexArray(VAO);
+//            glDrawArrays(GL_TRIANGLES, 0, 6);
+//
+//            // Draw textures in the companion window
+//            glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+//            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+//            if(i == LEFT)
+//                glBlitFramebuffer(0, 0, RENDER_WIDTH, RENDER_HEIGHT, 0, 0, SCR_WIDTH / 2, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+//            if(i == RIGHT)
+//                glBlitFramebuffer(0, 0, RENDER_WIDTH, RENDER_HEIGHT, SCR_WIDTH / 2, 0, SCR_WIDTH, SCR_HEIGHT, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+//            glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+//
+//
+//        }
+//        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+//
+//        // Pass textures to OpenVR
+//        vr::Texture_t leftEye  = {(void *) (uintptr_t) eyes[LEFT].texture,  vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
+//        vr::Texture_t rightEye = {(void *) (uintptr_t) eyes[RIGHT].texture, vr::TextureType_OpenGL, vr::ColorSpace_Gamma};
+//
+//        int error = 0;
+//        error |= vr::VRCompositor()->Submit(vr::Eye_Left, &leftEye);
+//        error |= vr::VRCompositor()->Submit(vr::Eye_Right, &rightEye);
+//
+//        if(error != vr::VRCompositorError_None)
+//            std::cout << "Submit error: " << error;
+//
+//
+//        processInput(window);
+//        glfwPollEvents();
+//        glfwSwapBuffers(window);
+//    }
 
     // Cleanup
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
 
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(controller.m_Window);
     return 0;
 }
 

@@ -24,6 +24,7 @@ void setImGuiSettings(float resolution_scale){
     style.Colors[ImGuiCol_Header] = ImColor(41, 41, 41);
     style.Colors[ImGuiCol_FrameBg] = ImColor(71, 71, 71);
     style.Colors[ImGuiCol_SliderGrab] = ImColor(153, 52, 94);
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 
     // ImGui Style Settings
