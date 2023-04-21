@@ -100,8 +100,6 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width);
 
 void ImageCenteredWithAspect(GLuint &texture, int target_width, float aspect);
 
-void dragDropInputFile(GLFWwindow *window, std::shared_ptr<std::string> output_path);
-
 void TextCentered(const std::string& text);
 
 void GuiFileDialog(const std::string& text, std::string& path);

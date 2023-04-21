@@ -11,11 +11,11 @@
 
 #include "Opt.h"
 
-// Returns true if ImGui was interacted with
 void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
 
     using namespace ImGui;
     bool update = false;
+    auto& opt = Opt::Get();
 
     BeginGroup();
     Text(" Left eye");
@@ -35,7 +35,7 @@ void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
         NewLine();
     }
 
-    if (Opt::GetFlags().size_mismatch){
+    if (Opt::Get().size_mismatch){
         BeginChild("scrolling", ImVec2(243, 35));
         PushItemWidth(235);
         SameLine(6);
@@ -60,19 +60,19 @@ void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
 //        RightAlignNextItem("Mask blur");
         BeginRightAlign("erf", 1);
         SetNextItemWidth(GetContentRegionAvail().x);
-            ImGui::SliderFloat("##", (float*) &Opt::Get().mask_blur_size, 1.0f, 255.0f);
+            ImGui::SliderFloat("##", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
         EndRightAlign();
 //        opt.update_stereo |= RightAlignedSlider("Strength", (float*) &opt.mask_blur_size, 1.0f, 255.0f);
 
         NewLine();
 
         RightAlignNextItem("Inpainting");
-        update |= Checkbox("Enable", &Opt::Get().inpainting_enable);
+        update |= Checkbox("Enable", &opt.inpainting_enable);
         SameLine(0, 10);
-        update |= Checkbox("Glitched", &Opt::Get().inpainting_glitch);
-        update |= SliderFloat("damp",  &Opt::Get().deviation,     1.0f, 500.0f);
-        update |= SliderInt("diffef",  &Opt::Get().x,             0.0f, 100.0f);
-        update |= SliderInt("iterat",  &Opt::Get().y,             1.0f, 255.0f);
+        update |= Checkbox("Glitched", &opt.inpainting_glitch);
+        update |= SliderFloat("damp",  &opt.deviation,     1.0f, 500.0f);
+        update |= SliderInt("diffef",  &opt.x,             0.0f, 100.0f);
+        update |= SliderInt("iterat",  &opt.y,             1.0f, 255.0f);
 
 
 //        opt.update_stereo |= RightAlignedSlider("Ciul", (float*) &opt.y, 0.0f, 10.0f);
@@ -84,7 +84,7 @@ void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
         Indent(8.0f);
         NewLine();
 
-        update |= SliderFloat("##Deviatione", &Opt::Get().deviation, 0.0f, 100.0f);
+        update |= SliderFloat("##Deviatione", &opt.deviation, 0.0f, 100.0f);
         SameLine();
         AlignTextToFramePadding();
         Text("x");
@@ -93,11 +93,11 @@ void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
         static std::string chuj = "1.0";
         update |= InputText("##Multipliere", &chuj, ImGuiInputTextFlags_CharsDecimal);
         try{
-            Opt::Get().deviation_multiplier = std::stof(chuj);
+            opt.deviation_multiplier = std::stof(chuj);
         } catch (std::exception& e) {}
 
         update |= SliderFloat("damp", &stereo.dampener,     1.0f, 1000.0f);
-        update |= SliderFloat("ipde",  &stereo.ipd,          1.0f, 10.0f);
+        update |= SliderFloat("ipde", &stereo.ipd,          1.0f, 10.0f);
         update |= SliderFloat("foca", &stereo.focal_length, 1.0f, 100.0f);
         update |= SliderFloat("size", &stereo.pixel_size,   0.001f, 1.0f);
         update |= InputInt("Near Distance", &stereo.near_distance);
@@ -112,7 +112,7 @@ void GuiImagePanel(Image &left, Stereo &stereo, float target_width) {
     EndChild();
     EndGroup();
 
-    Opt::GetFlags().update_stereo = update;
+    opt.update_stereo = update;
 
 }
 

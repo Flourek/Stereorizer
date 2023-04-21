@@ -150,7 +150,8 @@ bool openFileDialog(std::string& input_path, std::string& filename, const std::s
 
 void dropCallback(GLFWwindow *window, int count, const char** paths){
     Opt::Get().image_path = paths[0];
-    Opt::GetFlags().update_input = true;
+    Opt::Get().update_input = true;
+
 }
 
 

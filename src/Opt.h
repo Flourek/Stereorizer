@@ -7,7 +7,21 @@
 #include "iostream"
 #include "imgui.h"
 
-struct flags{
+
+class Opt {
+private:
+    static Opt s_Instance;
+
+public:
+    static Opt& Get() { return s_Instance; }
+
+    Opt() = default;
+    Opt(Opt &other) = delete;
+    void operator=(const Opt &) = delete;
+
+
+public:
+    // Logic flags
     bool update_stereo      = false;
     bool update_input       = true;
     bool update_depth       = false;
@@ -17,26 +31,6 @@ struct flags{
     bool midas_run          = false;
     bool midas_first_execution = true;
     bool vr_enabled          = false;
-};
-
-
-class Opt {
-private:
-    static Opt s_Instance;
-
-public:
-    static Opt& Get() { return s_Instance; }
-
-    static flags& GetFlags() { return Get().flag; }
-
-
-//    Opt(Opt &other) = delete;
-    void operator=(const Opt &) = delete;
-
-
-public:
-    // Logic flags
-    flags flag;
 
     // Variables
     bool depth_invert       = false;
@@ -64,6 +58,7 @@ public:
     float v[5] = { 0.950f, 0.050f, 0.795f, 0.035f };
     int chuej = 3;
 
+    // Zoom popup
     bool zoom_window_stick  = false;
     float zoom_level        = 4.0f;
     ImVec2 zoom_click_pos;

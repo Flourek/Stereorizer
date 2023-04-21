@@ -11,12 +11,9 @@
 #include "../libs/IconsFontAwesome5.h"
 #include "Opt.h"
 
-
-
 void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
     using namespace ImGui;
-    auto opt = Opt::Get();
-    auto flags = Opt::GetFlags();
+    auto& opt = Opt::Get();
 
     BeginGroup();
     Text(" Right eye");
@@ -114,9 +111,9 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
         Indent( 8.0f );
         NewLine();
 
-        flags.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
-        flags.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
-        ImGui::Checkbox("Live Refresh", &flags.live_refresh);
+        opt.update_stereo |= ImGui::Checkbox("Anaglyph overlay", &opt.anaglyph_overlay);
+        opt.update_stereo |= ImGui::Checkbox("Mask overlay", &opt.mask_overlay);
+        ImGui::Checkbox("Live Refresh", &opt.live_refresh);
 
         NewLine();
         Text("Viewport scale:");
@@ -135,7 +132,7 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
             stereo.right.createTexture();
             stereo.depth.convertToDisplay();
             stereo.depth.createTexture();
-            flags.update_depth |= true;
+            opt.update_depth |= true;
         }
 
         Unindent( 8.0f );
@@ -175,13 +172,13 @@ void GuiResultPanel(struct Stereo &stereo, class Image &zoom, float width) {
 
             if ( ImGui::Button("Launch SteamVR", ImVec2(0.32 * width, 32)) ){
 
-                if (!flags.vr_enabled){
+                if (!opt.vr_enabled){
                     VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
                     VRController::Run();
-                    flags.vr_enabled = true;
+                    opt.vr_enabled = true;
                 }
 
-                if(flags.vr_enabled)
+                if(opt.vr_enabled)
                     VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
 
             }

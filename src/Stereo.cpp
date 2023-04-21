@@ -27,7 +27,7 @@ void Stereo::run() {
     mask = 0;
     right.mat = 0;
 
-    auto opt = Opt::Get();
+    auto& opt = Opt::Get();
 
     // Resize inputs so that they all match
     resizeAll(opt.viewport_scale);
@@ -93,7 +93,7 @@ void Stereo::resizeAll(int scale) {
 void Stereo::ShiftPixels() {
 
     #define M_PI 3.14159265358979323846
-    auto opt = Opt::Get();
+    auto& opt = Opt::Get();
 
     // Normalizing the range of depth pixel values to user defined distance range
     float distances[UINT16_MAX + 1];
@@ -195,7 +195,7 @@ cv::Mat Stereo::maskPostProcess() {
     cv::threshold(res, res, 127,255, cv::THRESH_BINARY);
     cv::erode(res, res, erode);
 
-    auto opt = Opt::Get();
+    auto& opt = Opt::Get();
 
     if(opt.mask_blur){
 
@@ -207,7 +207,7 @@ cv::Mat Stereo::maskPostProcess() {
 
         // this is litteraly 10 times faster than normal nested for loops
         edge.forEach<Pixel> (
-                [&res, &edge, &opacity_step, opt] (Pixel &pixel, const int * position) -> void {
+                [&res, &edge, &opacity_step] (Pixel &pixel, const int * position) -> void {
 
                     if(position[1] == 0 || position[1] == res.cols) return;
 
@@ -215,7 +215,7 @@ cv::Mat Stereo::maskPostProcess() {
                     Pixel current  = res.at<Pixel>(position[0], position[1]);
                     if( previous == 255 && current == 0){
 
-                        for (int i = 0; i < opt.mask_blur_size; ++i) {
+                        for (int i = 0; i < Opt::Get().mask_blur_size; ++i) {
                             if ( position[1] + i > res.cols ) return;
                             edge.at<Pixel>(position[0], position[1] + i) = cv::saturate_cast<uchar>(255 - i * opacity_step * 4);
                         }

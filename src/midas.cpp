@@ -25,7 +25,7 @@ int generateDepthMap(std::string input_path, std::string model_path, Depth &dept
     result_path = result_path.substr(0, result_path.find_last_of("."));
     result_path = "./output/" + result_path + "-dpt_beit_large_512.png";
 
-
+    auto& opt = Opt::Get();
 
 //     Skip generating if file already exists
     std::ifstream infile(result_path);
@@ -35,9 +35,9 @@ int generateDepthMap(std::string input_path, std::string model_path, Depth &dept
 
         std::cout << "Generating depth map" << std::endl;
 
-        if(Opt::GetFlags().midas_first_execution){
+        if(opt.midas_first_execution){
             importModules();
-            Opt::GetFlags().midas_first_execution = false;
+            opt.midas_first_execution = false;
         }
 
         int argc = 2;

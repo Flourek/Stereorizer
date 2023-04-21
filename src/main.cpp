@@ -63,136 +63,127 @@ int main( int argc, char* argv[] ) {
     Depth depth("C:/Users/Flourek/CLionProjects/Stereorizer/cmake-build-relwithdebinfo/output/w-dpt_beit_large_512.png");
     Image right("../img/w.jpg");
     Image zoom("../img/w.jpg");
+    Opt::Get().image_path = "../img/w.jpg";
     zoom.gl_filter = GL_NEAREST;
     zoom.createTexture();
 
     Stereo stereo = Stereo(left, depth, right, Opt::Get().deviation);
 
-    auto input_path = std::make_shared<std::string>();
-    dragDropInputFile(window, input_path);
 
     std::string output_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/";
     std::string filename = "chuj.jpg";
-    *input_path = "C:/Users/Flourek/CLionProjects/Stereorizer/img/w.jpg";
 
     GLuint image_texture = 0, depth_texture = 0, result_texture= 0, zoom_texture = 0;
 
     cv::Mat depth_float;
 
-    auto flags = Opt::GetFlags();
-    auto opt = Opt::Get();
+    Opt& opt = Opt::Get();
+
 
     while(!glfwWindowShouldClose(window)){
-
-        glfwPollEvents();
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        int vw, vh;
-        glfwGetFramebufferSize(window, &vw, &vh);
+        opt.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
 
-        flags.force_update |= ImGui::IsKeyPressed(ImGuiKey_Space);
-
-        if (flags.update_input) {
+        // Program flow control
+        if (opt.update_input) {
             ZoneScopedN("Change Input");
-
-            left.changeImage(*input_path);
-            right.changeImage(*input_path);
+            std::cout << "me when setting to: "<<Opt::Get().image_path;
+            left.changeImage(opt.image_path);
+            right.changeImage(opt.image_path);
 
             opt.viewport_scale = left.getScaleSuggestion();
 
             zoom.mat = right.mat;
             zoom.createTexture();
 
-            if(flags.vr_enabled)
+            if(opt.vr_enabled)
                 VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
 
-            flags.update_input = false;
-            flags.update_depth = true;
-            flags.update_stereo = flags.live_refresh;
+            opt.update_input = false;
+            opt.update_depth = true;
+            opt.update_stereo = opt.live_refresh;
         }
 
-        if(flags.midas_run){
+        if(opt.midas_run){
 
             std::thread t;
 
             t = std::thread([&]() {
-                generateDepthMap(*input_path, Opt::Get().model_path, depth, nullptr);
+                generateDepthMap(opt.image_path, Opt::Get().model_path, depth, nullptr);
                 std::cout << "DONE XD"<< std::endl;
                 stereo.resizeAll( opt.viewport_scale);
 
-                flags.update_depth = true;
+                opt.update_depth = true;
 
             });
 
             t.detach();
-            flags.midas_run = false;
+            opt.midas_run = false;
         }
 
-        if (flags.update_depth) {
+        if (opt.update_depth) {
             ZoneScopedN("Depth");
             depth.convertToDisplay();
             depth.createTexture();
 
-            flags.update_stereo = flags.live_refresh;
-            flags.update_depth = false;
+            opt.update_stereo = opt.live_refresh;
+            opt.update_depth = false;
         }
 
-        flags.size_mismatch = (left.original.size != depth.original.size );
+        opt.size_mismatch = (left.original.size != depth.original.size );
 
-        if (!flags.size_mismatch){
+        if (!opt.size_mismatch){
             ZoneScopedN("Stereo");
 
-            if ((flags.update_stereo && flags.live_refresh) || flags.force_update){
+            if ((opt.update_stereo && opt.live_refresh) || opt.force_update){
                 stereo.run();
 
 //                zoom.mat = right.mat;
 //                zoom.createTexture();
 
-                flags.force_update = false;
-                flags.update_stereo = false;
+                opt.force_update = false;
+                opt.update_stereo = false;
 
-
-
-                if(flags.vr_enabled){
+                if(opt.vr_enabled){
                     VRController::Get().SetMats(stereo.left.mat, stereo.right.mat);
                     VRController::Get().texturesUpdated = true;
                 }
 
 
-//                if(opt.vr_enabled){
-//                }
-
             }
         }
 
+        // User interface
+        static int counter = 0;
+        ZoneScopedN("ImGUI");
 
-        using namespace ImGui; {
-            static int counter = 0;
-            ZoneScopedN("ImGUI");
+        int vw, vh;
+        glfwGetFramebufferSize(window, &vw, &vh);
 
-            SetNextWindowPos( ImVec2(0,0) );
-            SetNextWindowSize( ImVec2(vw, vh) );
-            Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
+        ImGui::SetNextWindowPos( ImVec2(0,0) );
+        ImGui::SetNextWindowSize( ImVec2(vw, vh) );
+        ImGui::Begin("main", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
+                               ImGuiWindowFlags_NoScrollWithMouse | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus);
 
-            Indent(16.0f);
-            GuiImagePanel(left, stereo, SmallImageSize);
+        ImGui::Indent(16.0f);
+        GuiImagePanel(left, stereo, SmallImageSize);
 
-            SameLine(0, 0.04*vw);
-            GuiDepthPanel(depth, SmallImageSize);
+        ImGui::SameLine(0, 0.04*vw);
+        GuiDepthPanel(depth, SmallImageSize);
 
-            SameLine(0, 0.04*vw);
-            GuiResultPanel(stereo, zoom, ResultImageSize);
+        ImGui::SameLine(0, 0.04*vw);
+        GuiResultPanel(stereo, zoom, ResultImageSize);
 
-            ImGui::End();
-        }
+        ImGui::End();
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+        glfwPollEvents();
         glfwSwapBuffers( window );
-
         FrameMark;
     }
 
